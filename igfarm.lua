@@ -21,7 +21,7 @@ function harvestBirchTree()
       blockAbove, blockData = turtle.inspectUp()
     end
     -- Go back to z = 0. --
-    while _pos.z > 0 do igturtle.down() end
+    while igturtle.getPos().z > 0 do igturtle.down() end
     return true
   else return false end
 end
@@ -82,6 +82,7 @@ end
 local function _harvestFaceForward(length, width)
   -- Check if we're at the end of the route. --
   local endy = (width % 2 == 1) and length or 1
+  local _pos = igturtle.getPos()
   if _pos.x >= width-1 and _pos.y == endy then
     return false
   end
@@ -114,6 +115,7 @@ local function _harvestForward(length, width, minfuel, keepslots, waittime)
   keepslots = keepslots or {}
   waittime = tonumber(waittime) or 60
   -- Check to make sure we have enough fuel to harvest a tree. --
+  local _pos = igturtle.getPos()
   local necessaryFuel = math.abs(_pos.x) + math.abs(_pos.y) + 2 + minfuel
   if turtle.getFuelLevel() < necessaryFuel then
     _harvestRefuel(keepslots)
@@ -164,8 +166,9 @@ function farmGeneric(length, width, options, farmBlockCb)
   end
   igturtle.emptyInventoryDown(keepslots)
   -- Main loop. --
-  local blockBelow, blockData
+  local blockBelow, blockData, _pos
   while true do
+    _pos = igturtle.getPos()
     if _pos.y > 0 then
       turtle.suckDown()
       farmBlockCb()

@@ -2,6 +2,10 @@
 local _pos = {x = 0, y = 0, z = 0, orient = 0}
 local _posFuel = {x = 1, y = 0, z = 0}
 
+function _pos.copy(self)
+  return {x=self.x,y=self.y,z=self.z,orient=self.orient}
+end
+
 -- Calculates taxi-cab distance from current location to specified location. --
 local function _distanceTo(x, y, z)
   assert(type(x) == "number" and type(y) == "number" and type(z) == "number",
@@ -117,6 +121,10 @@ function faceOrientation(orient)
     end
   end
   return true
+end
+
+function getPos()
+  return _pos:copy()
 end
 
 function goTo(x, y, z)
