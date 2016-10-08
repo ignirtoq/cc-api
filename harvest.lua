@@ -1,13 +1,11 @@
 args = {...}
 -- Check for API --
-local apiLoaded = os.loadAPI("ig")
-if not apiLoaded then
-  shell.run("pastebin get g8QXZrXa ig")
-  apiLoaded = os.loadAPI("ig")
-  assert(apiLoaded,"Error loading API")
+if not ig then
+  shell.run("pastebin","get","g8QXZrXa","ig")
+  assert(os.loadAPI("ig"),"Error loading API")
 end
 if args[1] then
-  ig.harvestBirch(tonumber(args[1]))
+  igfarm.harvestBirch(tonumber(args[1]))
 else
-  ig.harvestBirch(3)
+  igfarm.harvestBirch(3)
 end
