@@ -120,6 +120,15 @@ function faceOrientation(orient)
 end
 
 function goTo(x, y, z)
+  -- Allow table argument with members equal to the coordinates. --
+  if type(x) == "table" then
+    assert(type(x.x) == "number" and type(x.y) == "number",
+           "Table argument requires numerical x and y members.")
+    z = x.z or _pos.z
+    y = x.y
+    x = x.x
+  end
+  -- Verify numerical parameters. --
   assert(type(x) == "number" and type(y) == "number",
          "Must supply both x and y coordinates.")
   z = z or _pos.z
@@ -166,6 +175,37 @@ function setHome()
   _pos.y = 0
   _pos.z = 0
   _pos.orient = 0
+end
+
+-- Refuel the turtle. --
+-- Sends the turtle to the refuel station to get fuel and refuel itself.      --
+-- Turtle returns to previous position after refueling.                       --
+-- If the "enderfuel" option is provided, will place the ender chest in the   --
+-- slot specified, pull fuel out of it, and pick it up again.                 --
+function refuel(options)
+  options = options or {}
+  local slot = turtle.getSelectedSlot()
+  if options.enderfuel then
+    assert(type(options.enderfuel) == "number" and
+           options.enderfuel > 0 and options.enderfuel <= 16,
+           "Option 'enderfuel' must be set to a slot number between 1 and 16.")
+    turtle.select(options.enderfuel)
+    turtle.placeDown()
+    turtle.suckDown(16)
+    assert(turtle.refuel(), "No fuel available from fuel source.")
+    turtle.digDown()
+  else
+    local oldPos = {x=_pos.x, y=_pos.y, z=_pos.z}
+    local emptySlot = findEmptyItemSlot()
+    goTo(_posFuel)
+    assert(emptySlot, "No empty slot available for refueling.")
+    turtle.select(emptySlot)
+    turtle.suckDown(16)
+    assert(turtle.refuel(), "No fuel available from fuel source.")
+    goTo(oldPos)
+  end
+  turtle.select(slot)
+  return true
 end
 
 -- Empty a turtle's inventory into an inventory below it. --
