@@ -170,11 +170,25 @@ function goHome()
   goTo(0,0,0)
 end
 
+-- Sets the home position of the turtle to its current position. --
 function setHome()
   _pos.x = 0
   _pos.y = 0
   _pos.z = 0
   _pos.orient = 0
+end
+
+-- Sets the location of the fuel source to the turtle's current position. --
+-- Must be set after every call to setHome().                                 --
+function setRefuel(newpos)
+  if type(newpos) == "table" then
+    assert(newpos.x and newpos.y and newpos.z,
+           "Argument must be a table with x, y, and z members.")
+  else newpos = nil end
+  newpos = newpos or {x=_pos.x, y=_pos.y, z=_pos.z}
+  _posFuel.x = newpos.x
+  _posFuel.y = newpos.y
+  _posFuel.z = newpos.z
 end
 
 -- Refuel the turtle. --
