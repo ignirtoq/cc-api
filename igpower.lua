@@ -31,8 +31,8 @@ local function _setOutput(sides, value)
 end
 
 local function _broadcast(side, value)
-  Message.new(
-    {side=side, value=value, type=msgTypes.GENERATOR_STATUS}
+  igrednet.Message.new(
+    {side=side, value=value, type=igrednet.msgTypes.GENERATOR_STATUS}
   ):broadcast()
 end
 
@@ -91,9 +91,7 @@ function regulateGenerators(inputSides, outputSides, options)
   local runState, shouldRun = true, true
   -- Setup rednet broadcasting --
   if not options.quiet then
-    if not rednet.isOpen(peripheral.find("modem", findWirelessModemCb)._sideName) then
-      assert(connect(), "Could not find wireless modem.")
-    end
+    assert(igrednet.connect(), "Could not find wireless modem.")
   end
   -- Set initial output to off. --
   _setOutput(outSides, false)

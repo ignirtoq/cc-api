@@ -1,15 +1,15 @@
 -- Message enums --
-local msgTypes = {
+msgTypes = {
   MESSAGE = 0,
   GENERATOR_STATUS = 1,
   COMMAND = 2
 }
-local commands = {
+commands = {
   START_GENERATORS = 0,
   STOP_GENERATORS = 1
 }
 -- Message class --
-local Message = {}
+Message = {}
 function Message.new(members)
   local newobj = {}
   -- Inherit passed in values.
