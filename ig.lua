@@ -8,9 +8,12 @@ function waitFor(myfun, args)
            "Second argument must be array of arguments to function.")
   end
   args = args or {}
-  while not myfun(unpack(args)) do
+  local retval = {myfun(unpack(args))}
+  while not retval[1] do
     os.sleep(1)
+    retval = {myfun(unpack(args))}
   end
+  return unpack(retval)
 end
 
 -- Load in other API components. --
