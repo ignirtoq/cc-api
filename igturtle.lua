@@ -214,7 +214,11 @@ function refuel(options)
     turtle.select(options.enderfuel)
     turtle.placeDown()
     turtle.suckDown(16)
-    assert(turtle.refuel(), "No fuel available from fuel source.")
+    if not turtle.refuel() then
+      print("No fuel available from fuel source.")
+      print("Waiting for fuel.")
+      ig.waitFor(turtle.refuel)
+    end
     turtle.digDown()
   else
     local oldPos = {x=_pos.x, y=_pos.y, z=_pos.z}
@@ -223,7 +227,11 @@ function refuel(options)
     assert(emptySlot, "No empty slot available for refueling.")
     turtle.select(emptySlot)
     turtle.suckDown(16)
-    assert(turtle.refuel(), "No fuel available from fuel source.")
+    if not turtle.refuel() then
+      print("No fuel available from fuel source.")
+      print("Waiting for fuel.")
+      ig.waitFor(turtle.refuel)
+    end
     goTo(oldPos)
   end
   turtle.select(slot)
