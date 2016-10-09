@@ -28,6 +28,14 @@ function waitFor(myfun, args)
   return unpack(retval)
 end
 
+-- Prints out the content of a table when Lua won't. --
+function printTable(tab)
+  assert(type(tab) == "table", "Argument must be a table.")
+  for key, val in pairs(tab) do
+    print(tostring(key)..": "..tostring(val))
+  end
+end
+
 -- Load in other API components. --
 
 -- Pastebin URL stubs. --
