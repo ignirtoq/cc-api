@@ -1,3 +1,15 @@
+---------------------------------------------------
+--         Ignirtoq's ComputerCraft API          --
+--                                               --
+-- This file defines a basic collection of       --
+-- functions and objects useful to the other     --
+-- components of the API and development in      --
+-- general.  After defining these functions,     --
+-- the other components of the API compatible    --
+-- with this computer are downloaded and         --
+-- installed automatically.                      --
+---------------------------------------------------
+
 -- Common basic functions. --
 
 -- Executes a function once per second until its output is not false or nil.  --
