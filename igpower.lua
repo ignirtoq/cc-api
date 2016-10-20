@@ -112,3 +112,42 @@ function regulateGenerators(inputSides, outputSides, options)
     sleep(1)
   end
 end
+
+local function _connectReactor()
+  return peripheral.find("BigReactors-Reactor")
+end
+
+local function _reactorRunState(reactor, options)
+  options = options or {}
+  assert(type(options)=="table","options must be a table.")
+  local maxenergy = options.maxenergy or 6500000
+  local minenergy = options.minenergy or 1500000
+  local energy = reactor.getEnergyStored()
+  if energy < minenergy then
+    return true
+  elseif energy > maxenergy then
+    return false
+  else
+    return reactor.getActive()
+  end
+end
+
+function simpleRegulateReactor(options)
+  reactor = _connectReactor()
+  assert(reactor, "Cannot connect to reactor.")
+  local shouldrun = false
+  while true do
+    shouldrun = _reactorRunState(reactor, options)
+    if shouldrun ~= reactor.getActive() then
+      term.clear()
+      term.setCursorPos(1,1)
+      if shouldrun then
+        print("Starting reactor...")
+      else
+        print("Shutting down reactor...")
+      end
+      reactor.setActive(shouldrun)
+    end
+    sleep(1)
+  end
+end
