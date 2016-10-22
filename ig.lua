@@ -80,7 +80,8 @@ end
 
 -- Loads the other API components. --
 function loadAPI()
-  local apiLoaded = false
+  local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
+  assert(dirExists, "Error creating directory for API")
   -- Get igrednet. --
   require("igrednet")
   -- Get igpower. --
