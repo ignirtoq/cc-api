@@ -36,47 +36,61 @@ function printTable(tab)
   end
 end
 
--- Load in other API components. --
+-- GitHub URLs. --
+local _urlbase = "https://raw.githubusercontent.com/ignirtoq/cc-api/master/"
+local _urls = {}
+_urls["igrednet"] = _urlbase .. "igrednet.lua"
+_urls["igpower"]  = _urlbase .. "igpower.lua"
+_urls["igturtle"] = _urlbase .. "igturtle.lua"
+_urls["igfarm"]   = _urlbase .. "igfarm.lua"
 
--- Pastebin URL stubs. --
-local igrednetpaste = "PFSW7p9w"
-local igpowerpaste  = "cVPjDFpM"
-local igturtlepaste = "1icJ9QFM"
-local igfarmpaste   = "LZ3r5WAg"
+-- Local paths. --
+local _pathbase = "/ig/"
+local _paths = {}
+_paths["igrednet"] = _pathbase .. "igrednet"
+_paths["igpower"]  = _pathbase .. "igpower"
+_paths["igturtle"] = _pathbase .. "igturtle"
+_paths["igfarm"]   = _pathbase .. "igfarm"
+
+local function _writeApiFile(url, path)
+  assert(type(url)=="string", "First argument must be a valid URL")
+  assert(type(path)=="string", "Second argument must be a valid file path")
+  if fs.exists(path) then fs.delete(path) end
+  local f = fs.open(path, "w")
+  f.write(http.get(url).readAll())
+  f.close()
+end
+
+local _requiresTurtle = {}
+_requiresTurtle["igturtle"] = true
+_requiresTurtle["igfarm"]   = true
+
+-- Check that an API is loaded.  Download and load the API if it is not. --
+function require(apiname)
+  assert(_paths[apiname] and _urls[apiname], "Unknown API '"..apiname.."'")
+  if _requiresTurtle[apiname] then
+    assert(turtle, apiname .. " can only be loaded for turtles.")
+  end
+  -- Check if the API is loaded. --
+  if not _G[apiname] then
+    _writeApiFile(_urls[apiname], _paths[apiname])
+    assert(os.loadAPI(_paths[apiname]), "Error loading "..apiname.." API.")
+  end
+end
 
 -- Loads the other API components. --
 function loadAPI()
   local apiLoaded = false
   -- Get igrednet. --
-  if not igrednet then
-    os.run({}, "/rom/programs/shell", "/rom/programs/http/pastebin",
-           "get", igrednetpaste, "igrednet")
-    apiLoaded = os.loadAPI("igrednet")
-    assert(apiLoaded, "Error loading igrednet API.")
-  end
+  require("igrednet")
   -- Get igpower. --
-  if not igpower then
-    os.run({}, "/rom/programs/shell", "/rom/programs/http/pastebin",
-           "get", igpowerpaste, "igpower")
-    apiLoaded = os.loadAPI("igpower")
-    assert(apiLoaded, "Error loading igpower API.")
-  end
+  require("igpower")
   -- Check if this is a turtle. --
   if turtle then
     -- Get igturtle. --
-    if not igturtle then
-      os.run({}, "/rom/programs/shell", "/rom/programs/http/pastebin",
-             "get", igturtlepaste, "igturtle")
-      apiLoaded = os.loadAPI("igturtle")
-      assert(apiLoaded, "Error loading igturtle API.")
-    end
+    require("igturtle")
     -- Get igfarm. --
-    if not igfarm then
-      os.run({}, "/rom/programs/shell", "/rom/programs/http/pastebin",
-             "get", igfarmpaste, "igfarm")
-      apiLoaded = os.loadAPI("igfarm")
-      assert(apiLoaded, "Error loading igfarm API.")
-    end
+    require("igfarm")
   end
 end
 
