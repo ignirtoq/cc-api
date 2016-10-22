@@ -1,9 +1,14 @@
 args = {...}
 -- Check for API --
 if not ig then
-  shell.run("pastebin","get","g8QXZrXa","ig")
-  assert(os.loadAPI("ig"),"Error loading API")
+  local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
+  assert(dirExists, "Error creating directory for Ignirtoq's API")
+  local ig = fs.open("/ig/ig","w")
+  ig.write(http.get("https://raw.githubusercontent.com/ignirtoq/cc-api/master/ig.lua").readAll())
+  ig.close()
+  assert(os.loadAPI("/ig/ig"),"Error loading API")
 end
+-- Execute harvestBirch function. --
 if args[1] then
   igfarm.harvestBirch(tonumber(args[1]))
 else
