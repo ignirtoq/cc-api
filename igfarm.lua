@@ -1,6 +1,5 @@
 -- Requires igturtle API component. --
-assert(ig, "igfarm API requires ig API")
-ig.require("igturtle")
+assert(igturtle, "igfarm API requires igturtle API")
 
 -- Harvests a birch tree. --
 -- Assumes the turtle is sitting in the tree, one block above the lowest log. --

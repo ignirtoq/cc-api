@@ -1,6 +1,3 @@
--- Dependencies. --
-assert(ig, "igrednet API requires ig API")
-
 -- Message enums --
 msgTypes = {
   MESSAGE = 0,
