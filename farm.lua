@@ -8,6 +8,7 @@ if not ig then
   ig.close()
   assert(os.loadAPI("/ig/ig"),"Error loading API")
 end
+ig.require("igfarm")
 -- Execute farm function. --
 if args[1] then
   igfarm.farm(unpack(args))

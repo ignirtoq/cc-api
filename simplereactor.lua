@@ -8,6 +8,7 @@ if not ig then
   ig.close()
   assert(os.loadAPI("/ig/ig"),"Error loading API")
 end
+ig.require("igpower")
 -- Get options --
 minenergy = 1500000 or args[1]
 maxenergy = 6500000 or args[2]

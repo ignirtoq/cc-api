@@ -1,3 +1,6 @@
+-- Dependencies. --
+assert(ig, "igturtle API requires ig API")
+
 -- Turtle movement and position functions. --
 local _pos = {x = 0, y = 0, z = 0, orient = 0}
 local _posFuel = {x = 1, y = 0, z = 0}

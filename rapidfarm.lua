@@ -8,6 +8,7 @@ if not ig then
   ig.close()
   assert(os.loadAPI("/ig/ig"),"Error loading API")
 end
+ig.require("igturtle")
 -- Get options --
 dir = args[1] or "forward"
 -- Direction functions --
