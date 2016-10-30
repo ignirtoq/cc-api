@@ -2,15 +2,22 @@
 assert(ig, "igfarm API requires ig API")
 ig.require("igturtle")
 
--- Harvests a birch tree. --
+local _log, _sapling = {}
+_log["minecraft:log"] = true
+_log["MineFactoryReloaded:rubberwood.log"] = true
+_sapling["minecraft:log"] = "minecraft:sapling"
+_sapling["MineFactoryReloaded:rubberwood.log"] =
+  "MineFactoryReloaded:rubberwood.sapling"
+
+-- Harvests a straight tree. These include birch and pine but NOT oak. --
 -- Assumes the turtle is sitting in the tree, one block above the lowest log. --
--- Replants a birch sapling, if it has one.                                   --
-function harvestBirchTree()
+-- Replants a sapling, if it has one.                                         --
+function harvestStraightTree()
   local blockFound, blockData = turtle.inspectDown()
-  if blockFound and blockData.name == "minecraft:log" then
+  if blockFound and _log[blockData.name] then
     -- Remove the base trunk and replace the sapling. --
     turtle.digDown()
-    local saplingSlot = igturtle.findItemSlot("minecraft:sapling", 2)
+    local saplingSlot = igturtle.findItemSlot(_sapling[blockData.name])
     if saplingSlot then
       turtle.select(saplingSlot)
       turtle.placeDown()
@@ -25,6 +32,12 @@ function harvestBirchTree()
     while igturtle.getPos().z > 0 do igturtle.down() end
     return true
   else return false end
+end
+
+-- Harvests a birch tree, which always produces straight trees. --
+-- Calls harvestStraightTree.  Provided for backward-compatibility.           --
+function harvestBirchTree()
+  harvestStraightTree()
 end
 
 local function _getSaplings()
@@ -178,20 +191,30 @@ function farmGeneric(length, width, options, farmBlockCb)
   end
 end
 
--- Manage an existing birch tree farm of a specified size. --
--- Controls a turtle to manage a birch tree farm using two inventories.       --
+-- Manage an existing tree farm of a specified size. --
+-- Controls a turtle to manage a tree farm using two inventories.             --
 -- The first must contain birch saplings in the first slot at start.  After   --
 -- the turtle has picked up the saplings, this inventory will be used for     --
 -- dumping the wood and excess saplings.                                      --
 -- The second inventory, which must be right of but not connected to the      --
 -- first, will be used for fuel.  Using a barrel or other one-item-only       --
 -- inventory is recommended.                                                  --
-function harvestBirch(length, width, options)
+-- This function can only handle "straight" trees.  These include birch, pine --
+-- and rubber trees (from MineFactory Reloaded), but NOT oak or jungle, as    --
+-- these may grow into larger forms with complex shapes.                      --
+function harvestTrees(length, width, options)
   options = options or {}
   options.minfuel = options.minfuel or 18
   options.keepslots = options.keepslots or {1}
   _treeHarvestPrep()
-  farmGeneric(length, width, options, harvestBirchTree)
+  farmGeneric(length, width, options, harvestStraightTree)
+end
+
+-- Manages a birch tree farm.  Uses harvestTrees(). --
+-- Pass-through function for harvestTrees().  Provided for backward-          --
+-- compatibility.                                                             --
+function harvestBirch(length, width, options)
+  harvestTrees(length, width, options)
 end
 
 local _ripe, _seed = {}, {}
