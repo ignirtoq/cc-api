@@ -2,7 +2,7 @@
 assert(ig, "igfarm API requires ig API")
 ig.require("igturtle")
 
-local _log, _sapling = {}
+local _log, _sapling = {}, {}
 _log["minecraft:log"] = true
 _log["MineFactoryReloaded:rubberwood.log"] = true
 _sapling["minecraft:log"] = "minecraft:sapling"
