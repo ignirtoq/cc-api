@@ -46,7 +46,7 @@ local function _treeHarvestPrep()
   local saplingSlot = false
   while not saplingSlot and sapKey do
     saplingSlot = igturtle.findItemSlot(sapVal)
-    sapKey, sapVal = next(_sapling)
+    sapKey, sapVal = next(_sapling, sapKey)
   end
   -- Put saplings in slot 1. --
   if saplingSlot and saplingSlot ~= 1 then
