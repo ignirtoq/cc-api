@@ -24,7 +24,7 @@ function harvestStraightTree()
     end
     -- Remove the rest of the tree. --
     blockFound, blockData = turtle.inspectUp()
-    while blockFound and blockData.name == "minecraft:log" do
+    while blockFound and _log[blockData.name] do
       igturtle.up()
       blockAbove, blockData = turtle.inspectUp()
     end
