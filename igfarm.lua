@@ -40,21 +40,15 @@ function harvestBirchTree()
   harvestStraightTree()
 end
 
-local function _getSaplings()
-  if turtle.getSelectedSlot() ~= 1 then
-    turtle.select(1)
+local function _treeHarvestPrep()
+  -- Iterate through the sapling table to find any sapling. --
+  local sapKey, sapVal = next(_sapling)
+  local saplingSlot = false
+  while not saplingSlot and sapKey do
+    saplingSlot = igturtle.findItemSlot(sapVal)
+    sapKey, sapVal = next(_sapling)
   end
-  assert(turtle.suckDown(),
-         "Saplings must be in first non-empty slot of inventory below turtle.")
-  itemdata = turtle.getItemDetail()
-  assert(itemdata.name == "minecraft:sapling",
-         "Saplings must be in first non-empty slot of inventory below turtle.")
-end
-
-local function _treeHarvestPrep(damage)
-  damage = tonumber(damage) or 2
-  -- Find saplings and put them in slot 1. --
-  local saplingSlot = igturtle.findItemSlot("minecraft:sapling",damage)
+  -- Put saplings in slot 1. --
   if saplingSlot and saplingSlot ~= 1 then
     if turtle.getItemCount(1) > 0 then
       turtle.select(1)
@@ -69,7 +63,7 @@ local function _treeHarvestPrep(damage)
     end
     turtle.suckDown()
     local item1 = turtle.getItemDetail(1)
-    if not item1 or item1.name ~= "minecraft:sapling" or item1.damage ~= damage then
+    if not item1 or not _sapling[item1.name] then
       igturtle.emptyInventoryDown()
       error("Cannot farm without saplings.  Place saplings in first slot of inventory.")
     end
