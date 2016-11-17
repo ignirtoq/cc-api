@@ -276,6 +276,7 @@ _ripe["magicalcrops:EntropyshardCrop"] = 7
 _ripe["magicalcrops:OrdershardCrop"] = 7
 _ripe["magicalcrops:AmberCrop"] = 7
 _ripe["magicalcrops:QuicksilverCrop"] = 7
+_ripe["magicalcrops:SoulariumCrop"] = 7
 _seed["magicalcrops:AirCrop"] = "magicalcrops:AirSeeds"
 _seed["magicalcrops:CoalCrop"] = "magicalcrops:CoalSeeds"
 _seed["magicalcrops:DyeCrop"] = "magicalcrops:DyeSeeds"
@@ -330,6 +331,7 @@ _seed["magicalcrops:EntropyshardCrop"] = "magicalcrops:EntropyshardSeeds"
 _seed["magicalcrops:OrdershardCrop"] = "magicalcrops:OrdershardSeeds"
 _seed["magicalcrops:AmberCrop"] = "magicalcrops:AmberSeeds"
 _seed["magicalcrops:QuicksilverCrop"] = "magicalcrops:QuicksilverSeeds"
+_seed["magicalcrops:SoulariumCrop"] = "magicalcrops:SoulariumSeeds"
 
 local function _replant(cropName)
   if _seed[cropName] then
