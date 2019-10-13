@@ -5,9 +5,11 @@ ig.require("igturtle")
 local _log, _sapling = {}, {}
 _log["minecraft:log"] = true
 _log["MineFactoryReloaded:rubberwood.log"] = true
+_log["ferroustry:gold_log"] = true
 _sapling["minecraft:log"] = "minecraft:sapling"
 _sapling["MineFactoryReloaded:rubberwood.log"] =
   "MineFactoryReloaded:rubberwood.sapling"
+_sapling["ferroustry:gold_log"] = "ferroustry:gold_sapling"
 
 -- Harvests a straight tree. These include birch and pine but NOT oak. --
 -- Assumes the turtle is sitting in the tree, one block above the lowest log. --
