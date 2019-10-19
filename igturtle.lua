@@ -1,205 +1,220 @@
 -- Dependencies. --
 assert(ig, "igturtle API requires ig API")
 
--- Turtle movement and position functions. --
-local _pos = {x = 0, y = 0, z = 0, orient = 0}
-local _posFuel = {x = 1, y = 0, z = 0}
+-- Position abstraction. --
+local Position = {}
 
-function _pos.copy(self)
-  return {x=self.x,y=self.y,z=self.z,orient=self.orient}
+function Position:makePosition(o)
+    setmetatable(o, self)
+    self.__index = self
+    return o
 end
 
--- Calculates taxi-cab distance from current location to specified location. --
-local function _distanceTo(x, y, z)
-  assert(type(x) == "number" and type(y) == "number" and type(z) == "number",
-         "Requires valid x, y, and z arguments.")
-  return math.abs(_pos.x - x) + math.abs(_pos.y - y) + math.abs(_pos.z - z)
+function Position:new()
+    local o = {x=0, y=0, z=0}
+    return self:makePosition(o)
 end
+
+function Position:copy()
+    local o = self:new()
+    o.x, o.y, o.z = self.x, self.y, self.z
+    return o
+end
+
+function Position:distanceTo(other)
+    return math.abs(self.x - other.x) + math.abs(self.y - other.y) +
+           math.abs(self.z - other.z)
+end
+
+function Position:add(other)
+    self.x = self.x + other.x
+    self.y = self.y + other.y
+    self.z = self.z + other.z
+end
+
+-- Orientation abstraction. --
+local Orientation = {
+    -- Change in position when moving "forward" in given orientation. --
+    FORWARD = {
+        {x=0, y=1, z=0},
+        {x=1, y=0, z=0},
+        {x=0, y=-1, z=0},
+        {x=-1, y=0, z=0}
+    },
+    -- Change in position when moving "backward" in given orientation. --
+    BACK = {
+        {x=0, y=-1, z=0},
+        {x=-1, y=0, z=0},
+        {x=0, y=1, z=0},
+        {x=1, y=0, z=0}
+    }
+}
+
+function Orientation:new()
+    local o = {orient=1}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function Orientation:copy()
+    local o = self:new()
+    o.orient = self.orient
+    return o
+end
+
+function Orientation:turnLeft()
+    if self.orient == 1 then
+        self.orient = 4
+    else
+        self.orient = self.orient - 1
+    end
+end
+
+function Orientation:turnRight()
+    if self.orient == 4 then
+        self.orient = 1
+    else
+        self.orient = self.orient + 1
+    end
+end
+
+-- Turtle singleton. --
+local IgTurtle = {
+    pos = Position:new(),
+    fuelPos = Position:makePosition{x=1, y=0, z=0},
+    orient = Orientation:new()
+}
 
 -- Determines if turtle has enough fuel to reach refuelling station. --
-local function _refuelInRange()
-  assert(type(x) == "number" and type(y) == "number" and type(z) == "number",
-         "Requires valid x, y, and z arguments.")
-  local fuelLevel = turtle.getFuelLevel()
-  local distToFuel = _distanceTo(_posFuel.x, _posFuel.y, _posFuel.z)
-  return fuelLevel > distToFuel
+function IgTurtle:refuelInRange()
+    return turtle.getFuelLevel() > self.pos:distanceTo(self.fuelPos)
 end
 
-function forward()
-  -- Check if a block is in the way.  If so, remove it. --
-  if turtle.inspect() then
-    turtle.dig()
-  end
-  -- Move into position and record movement. --
-  local successfulMove = {turtle.forward()}
-  if successfulMove[1] then
-    if _pos.orient == 0 then
-      _pos.y = _pos.y + 1
-    elseif _pos.orient == 1 then
-      _pos.x = _pos.x + 1
-    elseif _pos.orient == 2 then
-      _pos.y = _pos.y - 1
-    elseif _pos.orient == 3 then
-      _pos.x = _pos.x - 1
+function IgTurtle:forward()
+    -- Check if a block is in the way.  If so, remove it. --
+    if turtle.inspect() then
+        turtle.dig()
     end
-  end
-  return unpack(successfulMove)
-end
-
-function back()
-  -- Move into position and record movement. --
-  local successfulMove = {turtle.back()}
-  if successfulMove[1] then
-    if _pos.orient == 0 then
-      _pos.y = _pos.y - 1
-    elseif _pos.orient == 1 then
-      _pos.x = _pos.x - 1
-    elseif _pos.orient == 2 then
-      _pos.y = _pos.y + 1
-    elseif _pos.orient == 3 then
-      _pos.x = _pos.x + 1
+    -- Move into position and record movement. --
+    local successfulMove = {turtle.forward()}
+    if successfulMove[1] then
+        self.pos:add(Orientation.FORWARD[self.orient.orient])
     end
-  end
-  return unpack(successfulMove)
+    return unpack(successfulMove)
 end
 
-function up()
-  -- Check if a block is in the way.  If so, remove it. --
-  if turtle.inspectUp() then
-    turtle.digUp()
-  end
-  -- Move into position and record movement. --
-  local successfulMove = {turtle.up()}
-  if successfulMove[1] then
-    _pos.z = _pos.z + 1
-  end
-  return unpack(successfulMove)
+function IgTurtle:back()
+    -- Move into position and record movement. --
+    local successfulMove = {turtle.back()}
+    if successfulMove[1] then
+        self.pos:add(Orientation.BACK[self.orient.orient])
+    end
+    return unpack(successfulMove)
 end
 
-function down()
-  -- Check if a block is in the way.  If so, remove it. --
-  if turtle.inspectDown() then
-    turtle.digDown()
-  end
-  -- Move into position and record movement. --
-  local successfulMove = {turtle.down()}
-  if successfulMove[1] then
-    _pos.z = _pos.z - 1
-  end
-  return unpack(successfulMove)
+function IgTurtle:up()
+    -- Check if a block is in the way.  If so, remove it. --
+    if turtle.inspectUp() then
+        turtle.digUp()
+    end
+    -- Move into position and record movement. --
+    local successfulMove = {turtle.up()}
+    if successfulMove[1] then
+        self.pos:add({x=0,y=0,z=1})
+    end
+    return unpack(successfulMove)
 end
 
-function turnRight()
-  local successfulMove = {turtle.turnRight()}
-  if successfulMove[1] then
-    if _pos.orient == 3 then
-      _pos.orient = 0
+function IgTurtle:down()
+    -- Check if a block is in the way.  If so, remove it. --
+    if turtle.inspectDown() then
+        turtle.digDown()
+    end
+    -- Move into position and record movement. --
+    local successfulMove = {turtle.down()}
+    if successfulMove[1] then
+        self.pos:add({x=0,y=0,z=-1})
+    end
+    return unpack(successfulMove)
+end
+
+function IgTurtle:turnRight()
+    local successfulMove = {turtle.turnRight()}
+    if successfulMove[1] then
+        self.orient:turnRight()
+    end
+    return unpack(successfulMove)
+end
+
+function IgTurtle:turnLeft()
+    local successfulMove = {turtle.turnLeft()}
+    if successfulMove[1] then
+        self.orient:turnLeft()
+    end
+    return unpack(successfulMove)
+end
+
+function IgTurtle:turnToFace(orient)
+    if (orient - self.orient.orient) % 4 > 2 then
+        while self.orient.orient ~= orient do
+            self:turnLeft()
+        end
     else
-      _pos.orient = _pos.orient + 1
+        while self.orient.orient ~= orient do
+            self:turnRight()
+        end
     end
-  end
-  return unpack(successfulMove)
 end
 
-function turnLeft()
-  local successfulMove = {turtle.turnLeft()}
-  if successfulMove[1] then
-    if _pos.orient == 0 then
-      _pos.orient = 3
-    else
-      _pos.orient = _pos.orient - 1
+function IgTurtle:goTo(dest)
+    local pos = self.pos
+    if turtle.getFuelLevel() < pos:distanceTo(dest) then
+        return false, "not enough fuel"
     end
-  end
-  return unpack(successfulMove)
+
+    local successfulMove
+    -- z-direction --
+    if pos.z ~= dest.z then
+        local zDirUp = pos.z > dest.z and 0 or 1
+        while pos.z ~= dest.z do
+            successfulMove = zDirUp == 1 and {self:up()} or {self:down()}
+            if not successfulMove[1] then return unpack(successfulMove) end
+        end
+    end
+    -- y-direction --
+    if pos.y ~= dest.y then
+        if pos.y > dest.y then self:turnToFace(3) else self:turnToFace(1) end
+        while pos.y ~= dest.y do
+            successfulMove = {self:forward()}
+            if not successfulMove[1] then return unpack(successfulMove) end
+        end
+    end
+    -- x-direction --
+    if pos.x ~= dest.x then
+        if pos.x > dest.x then self:turnToFace(4) else self:turnToFace(2) end
+        while pos.x ~= dest.x do
+            successfulMove = {self:forward()}
+            if not successfulMove[1] then return unpack(successfulMove) end
+        end
+    end
 end
 
-function faceOrientation(orient)
-  if (orient - _pos.orient) % 4 > 2 then
-    while _pos.orient ~= orient do
-      turnLeft()
-    end
-  else
-    while _pos.orient ~= orient do
-      turnRight()
-    end
-  end
-  return true
-end
-
-function getPos()
-  return _pos:copy()
-end
-
-function goTo(x, y, z)
-  -- Allow table argument with members equal to the coordinates. --
-  if type(x) == "table" then
-    assert(type(x.x) == "number" and type(x.y) == "number",
-           "Table argument requires numerical x and y members.")
-    z = x.z or _pos.z
-    y = x.y
-    x = x.x
-  end
-  -- Verify numerical parameters. --
-  assert(type(x) == "number" and type(y) == "number",
-         "Must supply both x and y coordinates.")
-  z = z or _pos.z
-  -- Verify we have enough fuel to get there. --
-  if turtle.getFuelLevel() < _distanceTo(x,y,z) then
-    return false, "Not enough fuel."
-  end
-  local successfulMove
-  -- Move in z-direction first. --
-  if _pos.z ~= z then
-    local zDirUp = _pos.z > z and 0 or 1
-    while _pos.z ~= z do
-      successfulMove = zDirUp == 1 and {up()} or {down()}
-      if not successfulMove[1] then return unpack(successfulMove) end
-    end
-  end
-  -- Move in y-direction. --
-  if _pos.y ~= y then
-    if _pos.y > y then faceOrientation(2) else faceOrientation(0) end
-    while _pos.y ~= y do
-      successfulMove = {forward()}
-      if not successfulMove[1] then return unpack(successfulMove) end
-    end
-  end
-  -- Move in x-direction. --
-  if _pos.x ~= x then
-    if _pos.x > x then faceOrientation(3) else faceOrientation(1) end
-    while _pos.x ~= x do
-      successfulMove = {forward()}
-      if not successfulMove[1] then return unpack(successfulMove) end
-    end
-  end
-  -- Face in the starting direction. --
-  faceOrientation(0)
-  return true
-end
-
-function goHome()
-  goTo(0,0,0)
+function IgTurtle:goHome()
+    self:goTo{x=0,y=0,z=0}
 end
 
 -- Sets the home position of the turtle to its current position. --
-function setHome()
-  _pos.x = 0
-  _pos.y = 0
-  _pos.z = 0
-  _pos.orient = 0
+function IgTurtle:setHome()
+    self.pos = Position:new()
+    self.orient = Orientation:new()
 end
 
--- Sets the location of the fuel source to the turtle's current position. --
--- Must be set after every call to setHome().                                 --
-function setRefuel(newpos)
-  if type(newpos) == "table" then
-    assert(newpos.x and newpos.y and newpos.z,
-           "Argument must be a table with x, y, and z members.")
-  else newpos = nil end
-  newpos = newpos or {x=_pos.x, y=_pos.y, z=_pos.z}
-  _posFuel.x = newpos.x
-  _posFuel.y = newpos.y
-  _posFuel.z = newpos.z
+-- Sets the location of the fuel source. --
+-- Should be set after every call to setHome().                               --
+function IgTurtle:setRefuel(pos)
+    pos = (type(pos) == "table" and pos.x and pos.y and pos.z) and pos or self.pos
+    self.fuelPos = Position:makePosition(pos):copy()
 end
 
 -- Refuel the turtle. --
@@ -207,52 +222,45 @@ end
 -- Turtle returns to previous position after refueling.                       --
 -- If the "enderfuel" option is provided, will place the ender chest in the   --
 -- slot specified, pull fuel out of it, and pick it up again.                 --
-function refuel(options)
-  options = options or {}
-  local slot = turtle.getSelectedSlot()
-  if options.enderfuel then
-    assert(type(options.enderfuel) == "number" and
-           options.enderfuel > 0 and options.enderfuel <= 16,
-           "Option 'enderfuel' must be set to a slot number between 1 and 16.")
-    turtle.select(options.enderfuel)
-    turtle.placeDown()
-    turtle.suckDown(16)
-    if not turtle.refuel() then
-      print("No fuel available from fuel source.")
-      print("Waiting for fuel.")
-      ig.waitFor(turtle.refuel)
+function IgTurtle:refuel(options)
+    options = options or {}
+    local oldPos = self.pos:copy()
+    if options.enderfuel then
+        self:refuelFromEnderChest(options.enderfuel)
+    else
+        local emptySlot = self:findEmptyItemSlot()
+        self:goTo(self.fuelPos)
+        assert(emptySlot, "no empty slot available for refueling")
+        self:refuelHere(emptySlot)
+        self:goTo(oldPos)
     end
+end
+
+-- Refuel using the ender chest in the specified slot. --
+function IgTurtle:refuelFromEnderChest(chestSlot)
+    turtle.select(chestSlot)
+    turtle.placeDown()
+    self:refuelHere(chestSlot)
     turtle.digDown()
-  else
-    local oldPos = {x=_pos.x, y=_pos.y, z=_pos.z}
-    local emptySlot = findEmptyItemSlot()
-    goTo(_posFuel)
-    assert(emptySlot, "No empty slot available for refueling.")
+end
+
+-- Refuel using the specified empty slot and fuel from an inventory below. --
+function IgTurtle:refuelHere(emptySlot)
     turtle.select(emptySlot)
     turtle.suckDown(16)
     if not turtle.refuel() then
-      print("No fuel available from fuel source.")
-      print("Waiting for fuel.")
-      ig.waitFor(turtle.refuel)
+        print("No fuel available from fuel source.")
+        print("Waiting for fuel.")
+        ig.waitFor(turtle.refuel)
     end
-    goTo(oldPos)
-  end
-  turtle.select(slot)
-  return true
 end
 
 -- Empty a turtle's inventory into an inventory below it. --
 -- Optional argument can be an array of slots to ignore.                      --
 -- Restores the selected slot to slot selected when function was called.      --
-function emptyInventoryDown(keepslots)
+function IgTurtle:emptyInventoryDown(keepslots)
   local oldSlot = turtle.getSelectedSlot()
-  local slotsToKeep = {}
-  -- Pull out the values and use as keys. --
-  if keepslots then
-    for _, i in ipairs(keepslots) do
-      slotsToKeep[i] = true
-    end
-  end
+  local slotsToKeep = ig.arrayToSet(keepslots or {})
   for i = 1,16 do
     if not slotsToKeep[i] and turtle.getItemCount(i) > 0 then
       turtle.select(i)
@@ -263,7 +271,7 @@ function emptyInventoryDown(keepslots)
 end
 
 -- Find slot containing to itemName.  Returns false on failure. --
-function findItemSlot(itemName, damage)
+function IgTurtle:findItemSlot(itemName, damage)
   local data, found, slot = nil, false, 0
   while slot < 16 and not found do
     slot = slot + 1
@@ -277,11 +285,105 @@ function findItemSlot(itemName, damage)
 end
 
 -- Find the first empty slot.  Returns false on failure. --
-function findEmptyItemSlot()
+function IgTurtle:findEmptyItemSlot()
   local slot, empty = 0, false
   while slot < 16 and not empty do
     slot = slot + 1
     empty = turtle.getItemCount(slot) < 1
   end
   return empty and slot
+end
+
+----------------
+-- Public API --
+----------------
+function forward()
+    return IgTurtle:forward()
+end
+
+function back()
+    return IgTurtle:back()
+end
+
+function up()
+    return IgTurtle:up()
+end
+
+function down()
+    return IgTurtle:down()
+end
+
+function turnRight()
+    return IgTurtle:turnRight()
+end
+
+function turnLeft()
+    return IgTurtle:turnLeft()
+end
+
+local _faceOrientation_deprecation_printed = false
+
+function faceOrientation(orient)
+    if not _faceOrientation_deprecation_printed then
+        print('igturtle.faceOrientation() is deprecated')
+        print('use igturtle.turnToFace() from now on')
+        _faceOrientation_deprecation_printed = true
+    end
+    return IgTurtle:turnToFace(orient)
+end
+
+function turnToFace(orient)
+    return IgTurtle:turnToFace(orient)
+end
+
+function getPos()
+    local pos = IgTurtle.pos:copy()
+    pos.orient = IgTurtle.orient.orient
+    return pos
+end
+
+function goTo(x, y, z)
+    if type(x) == "table" then
+        assert(type(x.x) == "number" and type(x.y) == "number",
+               "goTo() table argument requires numerical x and y members")
+        z = x.z or IgTurtle.pos.z
+        y = x.y
+        x = x.x
+    end
+    assert(type(x) == "number" and type(y) == "number",
+           "goTo() requires both x and y coordinates as numbers")
+    z = z or IgTurtle.pos.z
+    return IgTurtle:goTo{x=x, y=y, z=z}
+end
+
+function goHome()
+    return IgTurtle:goHome()
+end
+
+function setHome()
+    return IgTurtle:setHome()
+end
+
+function setRefuel(pos)
+    if type(pos) == "table" then
+        assert(pos.x and pos.y and pos.z,
+               "setRefuel() argument must be table with x, y, and z members")
+    else pos = nil end
+    return IgTurtle:setRefuel(pos)
+end
+
+function refuel(options)
+    return IgTurtle:refuel(options)
+end
+
+function emptyInventoryDown(keepslots)
+    return IgTurtle:emptyInventoryDown(keepslots)
+end
+
+function findItemSlot(itemName, damage)
+    return IgTurtle:findItemSlot(itemName, damage)
+end
+
+function findEmptyItemSlot()
+    return IgTurtle:findEmptyItemSlot()
 end
