@@ -25,6 +25,15 @@ function waitFor(myfun, args)
   return unpack(retval)
 end
 
+-- Convert an array of items to a set (table mapping items to true).          --
+function arrayToSet(array)
+    set = {}
+    for _, i in ipairs(array) do
+        set[i] = true
+    end
+    return set
+end
+
 -- Prints out the content of a table when Lua won't. --
 function printTable(tab)
   assert(type(tab) == "table", "Argument must be a table.")
