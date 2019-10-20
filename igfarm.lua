@@ -164,7 +164,7 @@ function farmGeneric(args)
     while true do
         if igturtle.getPos().y > 0 then
             turtle.suckDown()
-            cb()
+            cb(args)
         end
         th:forward()
     end
