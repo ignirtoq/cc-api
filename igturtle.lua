@@ -35,14 +35,14 @@ end
 -- Orientation abstraction. --
 local Orientation = {
     -- Change in position when moving "forward" in given orientation. --
-    FORWARD = {
+    FORWARD_POS_CHANGE = {
         {x=0, y=1, z=0},
         {x=1, y=0, z=0},
         {x=0, y=-1, z=0},
         {x=-1, y=0, z=0}
     },
     -- Change in position when moving "backward" in given orientation. --
-    BACK = {
+    BACK_POS_CHANGE = {
         {x=0, y=-1, z=0},
         {x=-1, y=0, z=0},
         {x=0, y=1, z=0},
@@ -99,7 +99,7 @@ function IgTurtle:forward()
     -- Move into position and record movement. --
     local successfulMove = {turtle.forward()}
     if successfulMove[1] then
-        self.pos:add(Orientation.FORWARD[self.orient.orient])
+        self.pos:add(Orientation.FORWARD_POS_CHANGE[self.orient.orient])
     end
     return unpack(successfulMove)
 end
@@ -108,7 +108,7 @@ function IgTurtle:back()
     -- Move into position and record movement. --
     local successfulMove = {turtle.back()}
     if successfulMove[1] then
-        self.pos:add(Orientation.BACK[self.orient.orient])
+        self.pos:add(Orientation.BACK_POS_CHANGE[self.orient.orient])
     end
     return unpack(successfulMove)
 end
@@ -387,3 +387,6 @@ end
 function findEmptyItemSlot()
     return IgTurtle:findEmptyItemSlot()
 end
+
+-- Orientation constants --
+FORWARD, RIGHT, BACKWARD, LEFT = 1, 2, 3, 4
