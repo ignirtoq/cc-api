@@ -53,9 +53,11 @@ end
 
 -- API versions --
 local _ver = {last = "0"}
-_ver["0"] = {last = "0"}
+_ver["0"] = {last = "1"}
 _ver["0"]["0"] = {last = "0"}
 _ver["0"]["0"]["0"] = true
+_ver["0"]["1"] = {last = "0"}
+_ver["0"]["1"]["0"] = true
 
 local function _verFromStr(s)
   assert(type(s) == "string", "Must be a string.")
