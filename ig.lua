@@ -99,6 +99,7 @@ end
 
 -- Third-party APIs --
 local _3rdPartyAPIs = {
+    argparse="https://raw.githubusercontent.com/mpeterv/argparse/master/src/argparse.lua",
     json="https://pastebin.com/raw/4nRg9CHU"
 }
 
