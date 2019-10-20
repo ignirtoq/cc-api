@@ -74,7 +74,7 @@ local function _verFromStr(s)
   return "v"..ver[1].."."..ver[2].."."..ver[3]
 end
 
--- GitHub URLs. --
+-- First-party URLs --
 local _urlbase = "https://raw.githubusercontent.com/ignirtoq/cc-api/"
 
 local function _makeUrl(apiname, version)
@@ -88,10 +88,14 @@ local function _makePath(apiname)
     return _pathbase .. apiname
 end
 
-local function _writeApiFile(args)
+-- Third-party APIs --
+local _3rdPartyAPIs = {
+    json="https://pastebin.com/raw/4nRg9CHU"
+}
+
+local function _writeUrlToFile(args)
   if fs.exists(args.path) then fs.delete(args.path) end
-  local req = http.get(args.url)
-  assert(req, "Invalid version.")
+  local req = assert(http.get(args.url), "invalid url")
   local f = fs.open(args.path, "w")
   f.write(http.get(args.url).readAll())
   f.close()
@@ -112,9 +116,18 @@ function require(apiname, version)
     -- Convert version string to tag/branch name. --
     version = _verFromStr(version)
     local path = _makePath(apiname)
-    _writeApiFile{url=_makeUrl(apiname, version), path=path}
+    _writeUrlToFile{url=_makeUrl(apiname, version), path=path}
     assert(os.loadAPI(path), "Error loading "..apiname.." API.")
   end
+end
+
+function require3rdParty(apiname)
+    assert(_3rdPartyAPIs[apiname], "invalid 3rd-party API name")
+    if not _G[apiname] then
+        local url, path = _3rdPartyAPIs[apiname], _makePath(apiname)
+        _writeUrlToFile{url=url, path=path}
+        assert(os.loadAPI(path), "Error loading "..apiname.." API.")
+    end
 end
 
 -- Loads the other API components. --
