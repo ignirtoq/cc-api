@@ -34,6 +34,15 @@ function arrayToSet(array)
     return set
 end
 
+-- Convert a table of key-value pairs to just an array of values.             --
+function valuesToArray(tbl)
+    local values = {}
+    for _, v in pairs(tbl) do
+        values[#values+1] = v
+    end
+    return values
+end
+
 -- Prints out the content of a table when Lua won't. --
 function printTable(tab)
   assert(type(tab) == "table", "Argument must be a table.")
