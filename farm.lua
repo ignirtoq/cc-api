@@ -11,7 +11,7 @@ end
 ig.require("igfarm")
 -- Execute farm function. --
 if args[1] then
-  igfarm.farm(unpack(args))
+  igfarm.farm{length=tonumber(args[1])}
 else
-  igfarm.farm(3)
+  igfarm.farm{length=3}
 end

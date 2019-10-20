@@ -2,150 +2,139 @@
 assert(ig, "igfarm API requires ig API")
 ig.require("igturtle")
 
-local _log, _sapling = {}, {}
-_log["minecraft:log"] = true
-_log["MineFactoryReloaded:rubberwood.log"] = true
-_log["ferroustry:gold_log"] = true
-_sapling["minecraft:log"] = "minecraft:sapling"
-_sapling["MineFactoryReloaded:rubberwood.log"] =
-  "MineFactoryReloaded:rubberwood.sapling"
-_sapling["ferroustry:gold_log"] = "ferroustry:gold_sapling"
+local _sapling = {
+    ["minecraft:oak_log"]="minecraft:oak_sapling",
+    ["minecraft:birch_log"]="minecraft:birch_sapling",
+    ["minecraft:spruce_log"]="minecraft:spruce_sapling",
+    ["minecraft:jungle_log"]="minecraft:jungle_sapling"
+}
 
--- Harvests a straight tree. These include birch and pine but NOT oak. --
--- Assumes the turtle is sitting in the tree, one block above the lowest log. --
--- Replants a sapling, if it has one.                                         --
-function harvestStraightTree()
-  local blockFound, blockData = turtle.inspectDown()
-  if blockFound and _log[blockData.name] then
-    -- Remove the base trunk and replace the sapling. --
-    turtle.digDown()
-    local saplingSlot = igturtle.findItemSlot(_sapling[blockData.name])
-    if saplingSlot then
-      turtle.select(saplingSlot)
-      turtle.placeDown()
-    end
-    -- Remove the rest of the tree. --
-    blockFound, blockData = turtle.inspectUp()
-    while blockFound and _log[blockData.name] do
-      igturtle.up()
-      blockAbove, blockData = turtle.inspectUp()
-    end
-    -- Go back to z = 0. --
-    while igturtle.getPos().z > 0 do igturtle.down() end
-    return true
-  else return false end
+-- Harvest state and functionality class.                                --
+local Harvest = {}
+
+function Harvest:makeTH(h)
+    setmetatable(h, self)
+    self.__index = self
+    return h
 end
 
--- Harvests a birch tree, which always produces straight trees. --
--- Calls harvestStraightTree.  Provided for backward-compatibility.           --
-function harvestBirchTree()
-  harvestStraightTree()
+function Harvest:new(args)
+    return self:makeTH{
+        length=assert(tonumber(args.length), "length required"),
+        width=tonumber(args.width) or tonumber(args.length),
+        minfuel=tonumber(args.minfuel) or 0,
+        waittime=args.waittime or 60,
+        saplings=ig.valuesToArray(args.saplings or _sapling)
+    }
 end
 
-local function _treeHarvestPrep()
-  -- Iterate through the sapling table to find any sapling. --
-  local sapKey, sapVal = next(_sapling)
-  local saplingSlot = false
-  while not saplingSlot and sapKey do
-    saplingSlot = igturtle.findItemSlot(sapVal)
-    sapKey, sapVal = next(_sapling, sapKey)
-  end
-  -- Put saplings in slot 1. --
-  if saplingSlot and saplingSlot ~= 1 then
-    if turtle.getItemCount(1) > 0 then
-      turtle.select(1)
-      turtle.dropDown()
+-- Create an array of slots containing known saplings.                        --
+function Harvest:findSaplingSlots()
+    local keepslots, slot = {}, false
+    for _, sapling in pairs(self.saplings) do
+        slot = igturtle.findItemSlot(sapling)
+        if slot then
+            keepslots[#keepslots+1] = slot
+        end
     end
-    turtle.select(saplingSlot)
-    turtle.transferTo(1)
-  elseif not saplingSlot then
-    turtle.select(1)
-    if turtle.getItemCount(1) > 0 then
-      turtle.dropDown()
-    end
-    turtle.suckDown()
-    local item1 = turtle.getItemDetail(1)
-    if not item1 or not _sapling[item1.name] then
-      igturtle.emptyInventoryDown()
-      error("Cannot farm without saplings.  Place saplings in first slot of inventory.")
-    end
-  end
-  igturtle.emptyInventoryDown({1})
-end
-
-local function _dumpHarvest(keepslots)
-  igturtle.goHome()
-  turtle.select(1)
-  igturtle.emptyInventoryDown(keepslots)
-end
-
-local function _harvestRefuel(keepslots)
-  -- Dump inventory to make room for fuel. --
-  _dumpHarvest(keepslots)
-  -- Refuel. --
-  igturtle.refuel()
+    return keepslots
 end
 
 -- Faces the next direction the turtle should travel along a route.           --
 -- Returns true if the turtle is ready to move forward and false if it has    --
 -- reached the end of the route.                                              --
-local function _harvestFaceForward(length, width)
-  -- Check if we're at the end of the route. --
-  local endy = (width % 2 == 1) and length or 1
-  local _pos = igturtle.getPos()
-  if _pos.x >= width-1 and _pos.y == endy then
-    return false
-  end
-  -- Determine the direction we should face to progress. --
-  -- If we're at home or otherwise y < 1, go forward.    --
-  if _pos.y < 1 then
-    igturtle.faceOrientation(0)
-  elseif _pos.x % 2 == 0 then
-    -- If we're at the end of a row, face right. --
-    if _pos.y >= length then
-      igturtle.faceOrientation(1)
-    -- Otherwise, face forward. --
-    else
-      igturtle.faceOrientation(0)
+function Harvest:faceForward()
+    local length, width = self.length, self.width
+    -- Check if we're at the end of the route. --
+    local endy = (width % 2 == 1) and length or 1
+    local _pos = igturtle.getPos()
+    if _pos.x >= width-1 and _pos.y == endy then
+        return false
     end
-  else
-    -- If we're at the start of a row, face right. --
-    if _pos.y <= 1 then
-      igturtle.faceOrientation(1)
-    -- Otherwise, face backward. --
+    -- Determine the direction we should face to progress. --
+    -- If we're at home or otherwise y < 1, go forward.    --
+    if _pos.y < 1 then
+        igturtle.turnToFace(igturtle.FORWARD)
+    elseif _pos.x % 2 == 0 then
+        -- If we're at the end of a row, face right. --
+        if _pos.y >= length then
+            igturtle.turnToFace(igturtle.RIGHT)
+        -- Otherwise, face forward. --
+        else
+            igturtle.turnToFace(igturtle.FORWARD)
+        end
     else
-      igturtle.faceOrientation(2)
+        -- If we're at the start of a row, face right. --
+        if _pos.y <= 1 then
+            igturtle.turnToFace(igturtle.RIGHT)
+        -- Otherwise, face backward. --
+        else
+            igturtle.turnToFace(igturtle.BACKWARD)
+        end
     end
-  end
-  return true
+    return true
 end
 
-local function _harvestForward(length, width, minfuel, keepslots, waittime)
-  minfuel = tonumber(minfuel) or 0
-  keepslots = keepslots or {}
-  waittime = tonumber(waittime) or 60
-  -- Check to make sure we have enough fuel to harvest a tree. --
-  local _pos = igturtle.getPos()
-  local necessaryFuel = math.abs(_pos.x) + math.abs(_pos.y) + 2 + minfuel
-  if turtle.getFuelLevel() < necessaryFuel then
-    _harvestRefuel(keepslots)
-    return
-  end
-  -- Check that our inventory isn't full. --
-  if turtle.getItemCount(16) > 0 then
-    _dumpHarvest(keepslots)
-    return
-  end
-  -- Face the direction we should move. --
-  -- If false, return to home and dump harvest. --
-  if _harvestFaceForward(length, width) then
-    -- Move forward. --
-    igturtle.forward()
-  else
-    _dumpHarvest(keepslots)
-    os.sleep(waittime)
-    return
-  end
+function Harvest:forward()
+    -- Check to make sure we have enough fuel to harvest a tree. --
+    local _pos = igturtle.getPos()
+    local necessaryFuel = math.abs(_pos.x) + math.abs(_pos.y) + 2 + self.minfuel
+    if turtle.getFuelLevel() < necessaryFuel then
+        self:refuel()
+        return
+    end
+    -- Check that our inventory isn't full. --
+    if turtle.getItemCount(16) > 0 then
+        self:dump()
+        return
+    end
+    -- Face the direction we should move. --
+    -- If false, return to home and dump harvest. --
+    if self:faceForward() then
+        -- Move forward. --
+        igturtle.forward()
+    else
+        self:dump()
+        os.sleep(self.waittime)
+    end
+end
+
+function Harvest:dump()
+    igturtle.goHome()
+    turtle.select(1)
+    igturtle.emptyInventoryDown(self:findSaplingSlots())
+end
+
+function Harvest:refuel()
+    self:dump()
+    igturtle.refuel()
+end
+
+-- Harvests a straight tree. These include birch and pine but NOT oak. --
+-- Assumes the turtle is sitting in the tree, one block above the lowest log. --
+-- Replants a sapling, if it has one.                                         --
+function harvestStraightTree(args)
+    args = args or {}
+    local log2sapling = args.saplings or _sapling
+    local blockFound, blockData = turtle.inspectDown()
+    if blockFound and log2sapling[blockData.name] then
+        -- Remove the base trunk and replace the sapling. --
+        turtle.digDown()
+        local saplingSlot = igturtle.findItemSlot(log2sapling[blockData.name])
+        if saplingSlot then
+            turtle.select(saplingSlot)
+            turtle.placeDown()
+        end
+        -- Remove the rest of the tree. --
+        blockFound, blockData = turtle.inspectUp()
+        while blockFound and log2sapling[blockData.name] do
+            igturtle.up()
+            blockAbove, blockData = turtle.inspectUp()
+        end
+        -- Go back to z = 0. --
+        while igturtle.getPos().z > 0 do igturtle.down() end
+        return true
+    else return false end
 end
 
 -- Generic farming function to be used for custom farms. --
@@ -156,35 +145,29 @@ end
 -- fuel is too low to continue, or its inventory is full, it returns home and --
 -- dumps its harvest into the inventory below itself.  It uses an inventory   --
 -- just to the right of home to refuel.                                       --
-function farmGeneric(length, width, options, farmBlockCb)
-  assert(length, "Must specify a size to harvest.")
-  assert(type(farmBlockCb) == "function",
-         "Must supply function to execute on each block.")
-  -- Convert length to a number. --
-  length = tonumber(length)
-  -- Convert width to number, or assume square if not given. --
-  width = tonumber(width) or length
-  -- Pull out any options. --
-  options = options or {}
-  minfuel = options.minfuel or 2
-  keepslots = options.keepslots
-  waittime = options.waittime or 60
-  -- If the turtle can't move a single block, try to eat the first item. --
-  turtle.select(1)
-  if turtle.getFuelLevel() < 1 then
-    if not turtle.refuel(1) then error("Need at least 1 fuel level.  Refuel before starting.") end
-  end
-  igturtle.emptyInventoryDown(keepslots)
-  -- Main loop. --
-  local blockBelow, blockData, _pos
-  while true do
-    _pos = igturtle.getPos()
-    if _pos.y > 0 then
-      turtle.suckDown()
-      farmBlockCb()
+function farmGeneric(args)
+    -- Check for required callback function. --
+    cb = args.callback
+    assert(type(cb) == "function", "farmGeneric() missing farm block callback")
+    -- Optional parameters. --
+    initFuelSlot = tonumber(args.initFuelSlot) or 1
+    -- If the turtle can't move a single block, try to eat the first item. --
+    turtle.select(initFuelSlot)
+    if turtle.getFuelLevel() < 1 then
+        if not turtle.refuel(1) then
+            error("Need at least 1 fuel level.  Refuel before starting.")
+        end
     end
-    _harvestForward(length, width, minfuel, keepslots, waittime)
-  end
+    -- Create the Harvest instance to manage state. --
+    local th = Harvest:new(args)
+    -- Main loop. --
+    while true do
+        if igturtle.getPos().y > 0 then
+            turtle.suckDown()
+            cb()
+        end
+        th:forward()
+    end
 end
 
 -- Manage an existing tree farm of a specified size. --
@@ -198,19 +181,10 @@ end
 -- This function can only handle "straight" trees.  These include birch, pine --
 -- and rubber trees (from MineFactory Reloaded), but NOT oak or jungle, as    --
 -- these may grow into larger forms with complex shapes.                      --
-function harvestTrees(length, width, options)
-  options = options or {}
-  options.minfuel = options.minfuel or 18
-  options.keepslots = options.keepslots or {1}
-  _treeHarvestPrep()
-  farmGeneric(length, width, options, harvestStraightTree)
-end
-
--- Manages a birch tree farm.  Uses harvestTrees(). --
--- Pass-through function for harvestTrees().  Provided for backward-          --
--- compatibility.                                                             --
-function harvestBirch(length, width, options)
-  harvestTrees(length, width, options)
+function harvestTrees(args)
+    args = args or {}
+    args.callback = harvestStraightTree
+    farmGeneric(args)
 end
 
 local _ripe, _seed = {}, {}
@@ -398,8 +372,9 @@ local function _farmPlant()
   end
 end
 
-function farm(length, width, options)
-  options = options or {}
-  options.waittime = options.waittime or 1800
-  farmGeneric(length, width, options, _farmPlant)
+function farm(args)
+    args = args or {}
+    args.waittime = args.waittime or 1800
+    args.callback = _farmPlant
+    farmGeneric(args)
 end

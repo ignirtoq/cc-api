@@ -11,7 +11,7 @@ end
 ig.require("igfarm")
 -- Execute harvestBirch function. --
 if args[1] then
-  igfarm.harvestBirch(tonumber(args[1]))
+  igfarm.harvestTrees{length=tonumber(args[1])}
 else
-  igfarm.harvestBirch(3)
+  igfarm.harvestTrees{length=3}
 end
