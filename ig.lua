@@ -51,6 +51,12 @@ function printTable(tab)
   end
 end
 
+function extendTable(orig, new)
+    for i = 1,#new,1 do
+        orig[#orig+1] = new[i]
+    end
+end
+
 -- API versions --
 local _ver = {last = "0"}
 _ver["0"] = {last = "1"}
@@ -151,6 +157,8 @@ function loadAPI(args)
   require("igrednet", version)
   -- Get igpower. --
   require("igpower", version)
+  -- Get iginput. --
+  require("iginput", version)
   -- Check if this is a turtle. --
   if turtle then
     -- Get igturtle. --
