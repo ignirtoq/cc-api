@@ -51,10 +51,20 @@ function printTable(tab)
   end
 end
 
+-- Extend a table's array portion with another table's array portion.         --
 function extendTable(orig, new)
     for i = 1,#new,1 do
         orig[#orig+1] = new[i]
     end
+end
+
+-------------------------
+-- Inheritance Helpers --
+-------------------------
+-- Set one table to use another table as an attribute lookup.                 --
+function clone(existing, new)
+    new.__index = existing
+    return setmetatable(new, new)
 end
 
 -- API versions --
