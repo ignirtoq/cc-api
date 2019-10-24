@@ -1,6 +1,9 @@
 -- Dependencies --
 assert(ig, "igfarm API requires ig API")
 ig.require("igturtle")
+ig.require("iglogging")
+
+local log = iglogging.getLogger("igfarm")
 
 local _sapling = {
     ["minecraft:oak_log"]="minecraft:oak_sapling",
@@ -9,23 +12,17 @@ local _sapling = {
     ["minecraft:jungle_log"]="minecraft:jungle_sapling"
 }
 
--- Harvest state and functionality class.                                --
+-- Harvest state and functionality class.                                     --
 local Harvest = {}
 
-function Harvest:makeTH(h)
-    setmetatable(h, self)
-    self.__index = self
-    return h
-end
-
 function Harvest:new(args)
-    return self:makeTH{
+    return ig.clone(Harvest, {
         length=assert(tonumber(args.length), "length required"),
         width=tonumber(args.width) or tonumber(args.length),
         minfuel=tonumber(args.minfuel) or 0,
         waittime=args.waittime or 60,
         saplings=ig.valuesToArray(args.saplings or _sapling)
-    }
+    })
 end
 
 -- Create an array of slots containing known saplings.                        --
@@ -35,6 +32,7 @@ function Harvest:findSaplingSlots()
         slot = igturtle.findItemSlot(sapling)
         if slot then
             keepslots[#keepslots+1] = slot
+            log:debug("found sapling %s in slot %d", sapling, slot)
         end
     end
     return keepslots
@@ -54,21 +52,26 @@ function Harvest:faceForward()
     -- Determine the direction we should face to progress. --
     -- If we're at home or otherwise y < 1, go forward.    --
     if _pos.y < 1 then
+        log:debug("at or behind minimum y value, turning to face forward")
         igturtle.turnToFace(igturtle.FORWARD)
     elseif _pos.x % 2 == 0 then
         -- If we're at the end of a row, face right. --
         if _pos.y >= length then
+            log:debug("at end of row, facing right")
             igturtle.turnToFace(igturtle.RIGHT)
         -- Otherwise, face forward. --
         else
+            log:debug("in middle of even row, facing forward")
             igturtle.turnToFace(igturtle.FORWARD)
         end
     else
         -- If we're at the start of a row, face right. --
         if _pos.y <= 1 then
+            log:debug("at start of row, facing right")
             igturtle.turnToFace(igturtle.RIGHT)
         -- Otherwise, face backward. --
         else
+            log:debug("in middle of odd row, facing backward")
             igturtle.turnToFace(igturtle.BACKWARD)
         end
     end
@@ -80,11 +83,13 @@ function Harvest:forward()
     local _pos = igturtle.getPos()
     local necessaryFuel = math.abs(_pos.x) + math.abs(_pos.y) + 2 + self.minfuel
     if turtle.getFuelLevel() < necessaryFuel then
+        log:info("not enough fuel to continue route, returning to fuel")
         self:refuel()
         return
     end
     -- Check that our inventory isn't full. --
     if turtle.getItemCount(16) > 0 then
+        log:info("inventory full, returning to dump inventory")
         self:dump()
         return
     end
@@ -94,6 +99,7 @@ function Harvest:forward()
         -- Move forward. --
         igturtle.forward()
     else
+        log:info("reached end of patrol, returning home to dump inventory")
         self:dump()
         os.sleep(self.waittime)
     end
@@ -118,20 +124,26 @@ function harvestStraightTree(args)
     local log2sapling = args.saplings or _sapling
     local blockFound, blockData = turtle.inspectDown()
     if blockFound and log2sapling[blockData.name] then
+        log:debug(blockData.name.." found below, harvesting")
         -- Remove the base trunk and replace the sapling. --
         turtle.digDown()
         local saplingSlot = igturtle.findItemSlot(log2sapling[blockData.name])
         if saplingSlot then
+            log:debug("found sapling, planting down")
             turtle.select(saplingSlot)
             turtle.placeDown()
+        else
+            log:warning("no sapling found, cannot replant")
         end
         -- Remove the rest of the tree. --
         blockFound, blockData = turtle.inspectUp()
         while blockFound and log2sapling[blockData.name] do
+            log:debug("log found above, moving up to harvest")
             igturtle.up()
             blockAbove, blockData = turtle.inspectUp()
         end
         -- Go back to z = 0. --
+        log:debug("returning to patrol height")
         while igturtle.getPos().z > 0 do igturtle.down() end
         return true
     else return false end
@@ -166,6 +178,7 @@ function farmGeneric(args)
             turtle.suckDown()
             cb(args)
         end
+        log:debug("moving forward")
         th:forward()
     end
 end
