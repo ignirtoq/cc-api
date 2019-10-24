@@ -163,17 +163,13 @@ function loadAPI(args)
   version = args.version or "master"
   local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
   assert(dirExists, "Error creating directory for API")
-  -- Get igrednet. --
-  require("igrednet", version)
-  -- Get igpower. --
-  require("igpower", version)
-  -- Get iginput. --
+  require("iglogging", version)
   require("iginput", version)
+  require("igrednet", version)
+  require("igpower", version)
   -- Check if this is a turtle. --
   if turtle then
-    -- Get igturtle. --
     require("igturtle", version)
-    -- Get igfarm. --
     require("igfarm", version)
   end
   return true
