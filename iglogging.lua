@@ -48,23 +48,23 @@ function LogInput:log(level, msg, ...)
 end
 
 function LogInput:debug(msg, ...)
-    LogOutput:log(DEBUG, msg, ...)
+    self:log(DEBUG, msg, ...)
 end
 
 function LogInput:info(msg, ...)
-    LogOutput:log(INFO, msg, ...)
+    self:log(INFO, msg, ...)
 end
 
 function LogInput:warning(msg, ...)
-    LogOutput:log(WARNING, msg, ...)
+    self:log(WARNING, msg, ...)
 end
 
 function LogInput:error(msg, ...)
-    LogOutput:log(ERROR, msg, ...)
+    self:log(ERROR, msg, ...)
 end
 
 function LogInput:critical(msg, ...)
-    LogOutput:log(CRITICAL, msg, ...)
+    self:log(CRITICAL, msg, ...)
 end
 
 ----------------
