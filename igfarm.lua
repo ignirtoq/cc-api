@@ -20,9 +20,14 @@ function Harvest:new(args)
         length=assert(tonumber(args.length), "length required"),
         width=tonumber(args.width) or tonumber(args.length),
         minfuel=tonumber(args.minfuel) or 0,
-        waittime=args.waittime or 60,
+        waittime=tonumber(args.waittime) or 60,
         saplings=ig.valuesToArray(args.saplings or _sapling)
     })
+end
+
+function Harvest:updateParams(args)
+    self.minfuel = tonumber(args.minfuel) or self.minfuel
+    self.waittime = tonumber(args.waittime) or self.waittime
 end
 
 -- Create an array of slots containing known saplings.                        --
@@ -121,10 +126,11 @@ end
 -- Replants a sapling, if it has one.                                         --
 function harvestStraightTree(args)
     args = args or {}
+    local height = 0
     local log2sapling = args.saplings or _sapling
     local blockFound, blockData = turtle.inspectDown()
     if blockFound and log2sapling[blockData.name] then
-        log:debug(blockData.name.." found below, harvesting")
+        log:debug("%s found below, harvesting", blockData.name)
         -- Remove the base trunk and replace the sapling. --
         turtle.digDown()
         local saplingSlot = igturtle.findItemSlot(log2sapling[blockData.name])
@@ -140,11 +146,19 @@ function harvestStraightTree(args)
         while blockFound and log2sapling[blockData.name] do
             log:debug("log found above, moving up to harvest")
             igturtle.up()
+            height = height + 1
             blockAbove, blockData = turtle.inspectUp()
         end
         -- Go back to z = 0. --
         log:debug("returning to patrol height")
         while igturtle.getPos().z > 0 do igturtle.down() end
+        -- Update minfuel to accomodate tree if it's not already large enough --
+        -- First, multiply the height by 2 for moving up and then down. --
+        height = 2*height
+        if (args.minfuel or 0) < height then
+            log:debug("update minfuel to %d accomodate taller tree", height)
+            args.minfuel = height
+        end
         return true
     else return false end
 end
@@ -177,6 +191,8 @@ function farmGeneric(args)
         if igturtle.getPos().y > 0 then
             turtle.suckDown()
             cb(args)
+            -- Update any parameters modified by the callback. --
+            th:updateParams(args)
         end
         log:debug("moving forward")
         th:forward()
