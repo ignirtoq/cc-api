@@ -105,7 +105,7 @@ end
 local _urlbase = "https://raw.githubusercontent.com/ignirtoq/cc-api/"
 
 local function _makeUrl(apiname, version)
-    return _urlbase .. version .. "/" .. apiname .. ".lua"
+    return _urlbase .. version .. "/src/" .. apiname .. ".lua"
 end
 
 -- Local paths. --
