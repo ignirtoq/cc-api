@@ -202,6 +202,7 @@ end
 
 function IgTurtle:goHome()
     self:goTo{x=0,y=0,z=0}
+    self:turnToFace(FORWARD)
 end
 
 -- Sets the home position of the turtle to its current position. --
