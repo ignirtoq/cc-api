@@ -285,6 +285,7 @@ if _isCC() then
     require = _require
     require3rdParty = _require3rdParty
     loadAPI = _loadAPI
+    isCC = _isCC
 else
     return {
         empty=_empty,
@@ -296,6 +297,7 @@ else
         clone=_clone,
         require=_require,
         require3rdParty=_require3rdParty,
-        loadAPI=_loadAPI
+        loadAPI=_loadAPI,
+        isCC=_isCC
     }
 end
