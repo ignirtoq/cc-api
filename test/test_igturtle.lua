@@ -15,6 +15,13 @@ local function assertPosEqual(p1, p2)
 end
 
 
+local function assertOrientEqual(o1, o2)
+    assert(o1.orient == o2.orient, string.format(
+        "%d != %d", o1.orient, o2.orient
+    ))
+end
+
+
 local function test_startPos()
     local pos = igturtle:getPos()
 
@@ -141,8 +148,42 @@ local function test_back()
 end
 
 
+local function test_turn(dir, newOrient)
+    assertOrientEqual(igturtle:getPos(), {orient=1})
+
+    -- Failed move. --
+    turtle[dir] = Mock()
+    turtle[dir]:whenCalled{when={}, thenReturn={false}}
+    assert(not igturtle[dir](igturtle))
+    turtle[dir]:assertCallCount(1)
+    assertOrientEqual(igturtle:getPos(), {orient=1})
+
+    -- Successful move. --
+    turtle[dir] = Mock()
+    turtle[dir]:whenCalled{when={}, thenReturn={true}}
+    assert(igturtle[dir](igturtle))
+    turtle[dir]:assertCallCount(1)
+    assertOrientEqual(igturtle:getPos(), {orient=newOrient})
+
+    -- Reset position. --
+    igturtle:setHome()
+end
+
+
+local function test_turnRight()
+    test_turn('turnRight', 2)
+end
+
+
+local function test_turnLeft()
+    test_turn('turnLeft', 4)
+end
+
+
 test_startPos()
 test_forward()
 test_back()
 test_up()
 test_down()
+test_turnRight()
+test_turnLeft()
