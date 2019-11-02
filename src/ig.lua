@@ -257,6 +257,10 @@ local function _loadAPI(args)
     version = args.version or "master"
     local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
     assert(dirExists, "Error creating directory for API")
+    if version ~= "master" then
+        os.unloadAPI("ig")
+        _require("ig", version)
+    end
     _require("iglogging", version)
     _require("iginput", version)
     _require("igrednet", version)
