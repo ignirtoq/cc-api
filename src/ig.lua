@@ -254,6 +254,7 @@ end
 
 -- Loads the other API components. --
 local function _loadAPI(args)
+    args = args or {}
     version = args.version or "master"
     local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
     assert(dirExists, "Error creating directory for API")
