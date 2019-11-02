@@ -9,6 +9,14 @@ function Position:new()
     return ig.clone(Position, {x=0, y=0, z=0})
 end
 
+function Position:clone(p)
+    return ig.clone(Position, {x=p.x, y=p.y, z=p.z})
+end
+
+function Position:fromGps(g)
+    return ig.clone(Position, {x=g[1], y=g[2], z=g[3]})
+end
+
 
 function Position:copy()
     return ig.clone(Position, {x=self.x, y=self.y, z=self.z})
@@ -21,6 +29,13 @@ function Position:distanceTo(other)
 end
 
 
+function Position:difference(a, b)
+    local new = Position:clone(a)
+    a.sub(b)
+    return a
+end
+
+
 function Position:add(other)
     self.x = self.x + other.x
     self.y = self.y + other.y
@@ -28,27 +43,34 @@ function Position:add(other)
 end
 
 
+function Position:sub(other)
+    self.x = self.x - other.x
+    self.y = self.y - other.y
+    self.z = self.z - other.z
+end
+
+
 -- Orientation abstraction. --
 local Orientation = {
     -- Change in position when moving "forward" in given orientation. --
     FORWARD_POS_CHANGE = {
-        {x=0, y=1, z=0},
+        [0]={x=0, y=0, z=1},
         {x=1, y=0, z=0},
-        {x=0, y=-1, z=0},
+        {x=0, y=0, z=-1},
         {x=-1, y=0, z=0}
     },
     -- Change in position when moving "backward" in given orientation. --
     BACK_POS_CHANGE = {
-        {x=0, y=-1, z=0},
+        [0]={x=0, y=0, z=-1},
         {x=-1, y=0, z=0},
-        {x=0, y=1, z=0},
+        {x=0, y=0, z=1},
         {x=1, y=0, z=0}
     }
 }
 
 
 function Orientation:new()
-    return ig.clone(Orientation, {orient=1})
+    return ig.clone(Orientation, {orient=0})
 end
 
 
@@ -58,33 +80,43 @@ end
 
 
 function Orientation:turnLeft()
-    if self.orient == 1 then
-        self.orient = 4
-    else
-        self.orient = self.orient - 1
-    end
-end
-
-
-function Orientation:turnRight()
-    if self.orient == 4 then
-        self.orient = 1
+    if self.orient == 3 then
+        self.orient = 0
     else
         self.orient = self.orient + 1
     end
 end
 
 
+function Orientation:turnRight()
+    if self.orient == 0 then
+        self.orient = 3
+    else
+        self.orient = self.orient - 1
+    end
+end
+
+
 -- Turtle singleton. --
 local IgTurtle = {
+    -- Local coordinate data --
     _pos = Position:new(),
-    _fuelPos = ig.clone(Position, {x=1, y=0, z=0}),
     _orient = Orientation:new(),
+    _home = Position:new(),
+    _fuelPos = ig.clone(Position, {x=1, y=0, z=0}),
+    -- Global coordinate data --
+    _globalPosDiff = Position:new(),
+    _globalOrientDiff = Orientation:new(),
     -- Orientation constants --
-    FORWARD = 1,
-    RIGHT = 2,
-    BACKWARD = 3,
-    LEFT = 4
+    FORWARD = 0,
+    LEFT = 1,
+    BACKWARD = 2,
+    RIGHT = 3,
+    -- GPS orientation constants --
+    NORTH = 0,
+    WEST = 1,
+    SOUTH = 2,
+    EAST = 3
 }
 
 
@@ -92,6 +124,11 @@ function IgTurtle:getPos()
     local pos = self._pos:copy()
     pos.orient = self._orient.orient
     return pos
+end
+
+
+function IgTurtle:getOrient()
+    return self.orient:copy()
 end
 
 
@@ -140,7 +177,7 @@ function IgTurtle:up()
     -- Move into position and record movement. --
     local successfulMove = {turtle.up()}
     if successfulMove[1] then
-        self._pos:add({x=0,y=0,z=1})
+        self._pos:add({x=0,y=1,z=0})
     end
     return unpack(successfulMove)
 end
@@ -154,7 +191,7 @@ function IgTurtle:down()
     -- Move into position and record movement. --
     local successfulMove = {turtle.down()}
     if successfulMove[1] then
-        self._pos:add({x=0,y=0,z=-1})
+        self._pos:add({x=0,y=-1,z=0})
     end
     return unpack(successfulMove)
 end
@@ -209,18 +246,18 @@ function IgTurtle:goTo(x, y, z)
     end
 
     local successfulMove
-    -- z-direction --
-    if pos.z ~= dest.z then
-        local zDirUp = pos.z > dest.z and 0 or 1
-        while pos.z ~= dest.z do
-            successfulMove = zDirUp == 1 and {self:up()} or {self:down()}
+    -- vertical --
+    if pos.y ~= dest.y then
+        local yDirUp = pos.y > dest.y and 0 or 1
+        while pos.y ~= dest.y do
+            successfulMove = yDirUp == 1 and {self:up()} or {self:down()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
     end
-    -- y-direction --
-    if pos.y ~= dest.y then
-        if pos.y > dest.y then self:turnToFace(3) else self:turnToFace(1) end
-        while pos.y ~= dest.y do
+    -- z-direction --
+    if pos.z ~= dest.z then
+        if pos.z > dest.z then self:turnToFace(3) else self:turnToFace(1) end
+        while pos.z ~= dest.z do
             successfulMove = {self:forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
@@ -237,14 +274,14 @@ end
 
 
 function IgTurtle:goHome()
-    self:goTo{x=0,y=0,z=0}
+    self:goTo(self._home)
     self:turnToFace(FORWARD)
 end
 
 
 -- Sets the home position of the turtle to its current position. --
 function IgTurtle:setHome()
-    self._pos = Position:new()
+    self._home = self._pos:copy()
     self._orient = Orientation:new()
 end
 
@@ -372,5 +409,7 @@ if ig.isCC() then
     BACKWARD = IgTurtle.BACKWARD
     LEFT = IgTurtle.LEFT
 else
+    IgTurtle.Position = Position
+    IgTurtle.Orientation = Orientation
     return IgTurtle
 end
