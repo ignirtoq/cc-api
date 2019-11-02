@@ -202,6 +202,7 @@ function IgTurtle:goTo(x, y, z)
     assert(type(x) == "number" and type(y) == "number",
            "goTo() requires both x and y coordinates as numbers")
     z = z or IgTurtle._pos.z
+    local dest = {x=x, y=y, z=z}
     local pos = self._pos
     if turtle.getFuelLevel() < pos:distanceTo(dest) then
         return false, "not enough fuel"
