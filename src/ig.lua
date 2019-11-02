@@ -96,6 +96,15 @@ local function _extendTable(orig, ...)
 end
 
 
+-- Wrap a function with zero or more arguments to create a new function.      --
+local function _partial(func, ...)
+    local args = {...}
+    return function(...)
+        return func(unpack(_extendTable({}, args, {...})))
+    end
+end
+
+
 -------------------------
 -- Inheritance Helpers --
 -------------------------
@@ -291,6 +300,7 @@ if _isCC() then
     require3rdParty = _require3rdParty
     loadAPI = _loadAPI
     isCC = _isCC
+    partial = _partial
 else
     return {
         empty=_empty,
@@ -303,6 +313,7 @@ else
         require=_require,
         require3rdParty=_require3rdParty,
         loadAPI=_loadAPI,
-        isCC=_isCC
+        isCC=_isCC,
+        partial=_partial
     }
 end

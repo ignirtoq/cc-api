@@ -349,23 +349,23 @@ end
 -- Public API --
 ----------------
 if ig.isCC() then
-    forward = IgTurtle.forward
-    back = IgTurtle.back
-    up = IgTurtle.up
-    down = IgTurtle.down
-    turnRight = IgTurtle.turnRight
-    turnLeft = IgTurtle.turnLeft
-    turnToFace = IgTurtle.turnToFace
-    getPos = IgTurtle.getPos
-    getRefuelPos = IgTurtle.getRefuelPos
-    goTo = IgTurtle.goTo
-    goHome = IgTurtle.goHome
-    setHome = IgTurtle.setHome
-    setRefuel = IgTurtle.setRefuel
-    refuel = IgTurtle.refuel
-    emptyInventoryDown = IgTurtle.emptyInventoryDown
-    findItemSlot = IgTurtle.findItemSlot 
-    findEmptyItemSlot = IgTurtle.findEmptyItemSlot
+    forward = ig.partial(IgTurtle.forward, IgTurtle)
+    back = ig.partial(IgTurtle.back, IgTurtle)
+    up = ig.partial(IgTurtle.up, IgTurtle)
+    down = ig.partial(IgTurtle.down, IgTurtle)
+    turnRight = ig.partial(IgTurtle.turnRight, IgTurtle)
+    turnLeft = ig.partial(IgTurtle.turnLeft, IgTurtle)
+    turnToFace = ig.partial(IgTurtle.turnToFace, IgTurtle)
+    getPos = ig.partial(IgTurtle.getPos, IgTurtle)
+    getRefuelPos = ig.partial(IgTurtle.getRefuelPos, IgTurtle)
+    goTo = ig.partial(IgTurtle.goTo, IgTurtle)
+    goHome = ig.partial(IgTurtle.goHome, IgTurtle)
+    setHome = ig.partial(IgTurtle.setHome, IgTurtle)
+    setRefuel = ig.partial(IgTurtle.setRefuel, IgTurtle)
+    refuel = ig.partial(IgTurtle.refuel, IgTurtle)
+    emptyInventoryDown = ig.partial(IgTurtle.emptyInventoryDown, IgTurtle)
+    findItemSlot = ig.partial(IgTurtle.findItemSlot , IgTurtle)
+    findEmptyItemSlot = ig.partial(IgTurtle.findEmptyItemSlot, IgTurtle)
 else
     return IgTurtle
 end
