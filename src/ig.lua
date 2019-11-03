@@ -51,8 +51,7 @@ local function _valuesToArray(tbl)
 end
 
 
--- Prints out the content of a table when Lua won't. --
-local function _printTable(tab, indent)
+local function _tableToString(tab, indent)
     assert(type(tab) == "table", "Argument must be a table.")
     indent = indent or 2
     -- Convert indent number to space characters. --
@@ -62,17 +61,25 @@ local function _printTable(tab, indent)
     end
     sp = table.concat(sp, "")
     -- Print the fields. --
-    if indent == 2 then print("{") end
+    local arr = {}
+    if indent == 2 then table.insert(arr, "{") end
     for key, val in pairs(tab) do
         if type(val) ~= "table" then
-            print(sp..tostring(key)..": "..tostring(val))
+            table.insert(arr, sp..tostring(key)..": "..tostring(val))
         else
-            print(sp..tostring(key)..": {")
-            _printTable(val, indent+2)
-            print(sp.."}")
+            table.insert(arr, sp..tostring(key)..": {")
+            table.insert(arr, _tableToString(val, indent+2))
+            table.insert(arr, sp.."}")
         end
     end
-    if indent == 2 then print("}") end
+    if indent == 2 then table.insert(arr, "}") end
+    return table.concat(arr, "\n")
+end
+
+
+-- Prints out the content of a table when Lua won't. --
+local function _printTable(tab, indent)
+    print(_tableToString(tab, indent))
 end
 
 
@@ -108,13 +115,39 @@ end
 -------------------------
 -- Inheritance Helpers --
 -------------------------
+_mtSpecialKeys = {
+    '__add',
+    '__sub',
+    '__mul',
+    '__div',
+    '__mod',
+    '__unm',
+    '__concat',
+    '__eq',
+    '__lt',
+    '__le',
+    '__call',
+    '__tostring'
+}
+
+
+local function _copyMeta(existing_mt, new_mt)
+    for _, key in pairs(_mtSpecialKeys) do
+        new_mt[key] = existing_mt[key] or new_mt[key]
+    end
+    return new_mt
+end
+
+
 -- Set one table to use another table as an attribute lookup.                 --
 local function _clone(existing, new)
     new = new or {}
     assert(type(existing) == "table", "clone arguments must be tables")
     assert(type(new) == "table", "clone arguments must be tables")
-    new.__index = existing
-    return setmetatable(new, new)
+    local existing_mt = getmetatable(existing) or {}
+    local new_mt = getmetatable(new) or {}
+    new_mt.__index = existing
+    return setmetatable(new, _copyMeta(existing_mt, new_mt))
 end
 
 
@@ -293,6 +326,7 @@ if _isCC() then
     waitFor = _waitFor
     arrayToSet = _arrayToSet
     valuesToArray = _valuesToArray
+    tableToString = _tableToString
     printTable = _printTable
     extendTable = _extendTable
     clone = _clone
@@ -307,6 +341,7 @@ else
         waitFor=_waitFor,
         arrayToSet=_arrayToSet,
         valuesToArray=_valuesToArray,
+        tableToString=_tableToString,
         printTable=_printTable,
         extendTable=_extendTable,
         clone=_clone,
