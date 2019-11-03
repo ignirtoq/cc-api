@@ -256,7 +256,11 @@ function IgTurtle:goTo(x, y, z)
     end
     -- z-direction --
     if pos.z ~= dest.z then
-        if pos.z > dest.z then self:turnToFace(3) else self:turnToFace(1) end
+        if pos.z > dest.z then
+            self:turnToFace(self.BACKWARD)
+        else
+            self:turnToFace(self.FORWARD)
+        end
         while pos.z ~= dest.z do
             successfulMove = {self:forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
@@ -264,7 +268,11 @@ function IgTurtle:goTo(x, y, z)
     end
     -- x-direction --
     if pos.x ~= dest.x then
-        if pos.x > dest.x then self:turnToFace(4) else self:turnToFace(2) end
+        if pos.x > dest.x then
+            self:turnToFace(self.RIGHT)
+        else
+            self:turnToFace(self.LEFT)
+        end
         while pos.x ~= dest.x do
             successfulMove = {self:forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
