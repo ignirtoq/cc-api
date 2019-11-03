@@ -3,6 +3,8 @@ assert(ig, "igturtle API requires ig API")
 
 -- Position abstraction. --
 local Position = {}
+local _PositionMt = getmetatable(Position) or {}
+setmetatable(Position, _PositionMt)
 
 
 function Position:new()
@@ -29,17 +31,11 @@ function Position:distanceTo(other)
 end
 
 
-function Position:difference(a, b)
-    local new = Position:clone(a)
-    a.sub(b)
-    return a
-end
-
-
 function Position:add(other)
     self.x = self.x + other.x
     self.y = self.y + other.y
     self.z = self.z + other.z
+    return self
 end
 
 
@@ -47,7 +43,24 @@ function Position:sub(other)
     self.x = self.x - other.x
     self.y = self.y - other.y
     self.z = self.z - other.z
+    return self
 end
+
+
+function Position.sum(a, b)
+    return Position:clone(a):add(b)
+end
+
+
+function Position.difference(a, b)
+    return Position:clone(a):sub(b)
+end
+
+
+_PositionMt.__add = Position.sum
+_PositionMt.__sub = Position.difference
+_PositionMt.__tostring = ig.tableToString
+_PositionMt.__eq = function(a, b) return a.x==b.x and a.y==b.y and a.z==b.z end
 
 
 -- Orientation abstraction. --
@@ -67,10 +80,17 @@ local Orientation = {
         {x=1, y=0, z=0}
     }
 }
+local _OrientationMt = getmetatable(Orientation) or {}
+setmetatable(Orientation, _OrientationMt)
 
 
 function Orientation:new()
     return ig.clone(Orientation, {orient=0})
+end
+
+
+function Orientation:clone(o)
+    return ig.clone(Orientation, {orient=o.orient})
 end
 
 
@@ -79,22 +99,42 @@ function Orientation:copy()
 end
 
 
+function Orientation:add(other)
+    self.orient = (self.orient + other.orient) % 4
+    return self
+end
+
+
+function Orientation:sub(other)
+    self.orient = (self.orient - other.orient) % 4
+    return self
+end
+
+
+function Orientation.sum(a, b)
+    return Orientation:clone(a):add(b)
+end
+
+
+function Orientation.difference(a, b)
+    return Orientation:clone(a):sub(b)
+end
+
+
 function Orientation:turnLeft()
-    if self.orient == 3 then
-        self.orient = 0
-    else
-        self.orient = self.orient + 1
-    end
+    return self:add{orient=1}
 end
 
 
 function Orientation:turnRight()
-    if self.orient == 0 then
-        self.orient = 3
-    else
-        self.orient = self.orient - 1
-    end
+    return self:sub{orient=1}
 end
+
+
+_OrientationMt.__add = Orientation.sum
+_OrientationMt.__sub = Orientation.difference
+_OrientationMt.__tostring = ig.tableToString
+_OrientationMt.__eq = function(a, b) return a.orient==b.orient end
 
 
 -- Turtle singleton. --
@@ -113,10 +153,10 @@ local IgTurtle = {
     BACKWARD = 2,
     RIGHT = 3,
     -- GPS orientation constants --
-    NORTH = 0,
-    WEST = 1,
-    SOUTH = 2,
-    EAST = 3
+    EAST = 0,
+    NORTH = 1,
+    WEST = 2,
+    SOUTH = 3
 }
 
 
