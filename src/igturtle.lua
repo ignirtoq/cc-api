@@ -367,6 +367,10 @@ if ig.isCC() then
     emptyInventoryDown = ig.partial(IgTurtle.emptyInventoryDown, IgTurtle)
     findItemSlot = ig.partial(IgTurtle.findItemSlot , IgTurtle)
     findEmptyItemSlot = ig.partial(IgTurtle.findEmptyItemSlot, IgTurtle)
+    FORWARD = IgTurtle.FORWARD
+    RIGHT = IgTurtle.RIGHT
+    BACKWARD = IgTurtle.BACKWARD
+    LEFT = IgTurtle.LEFT
 else
     return IgTurtle
 end
