@@ -262,7 +262,7 @@ local function test_startPos()
     local pos = igturtle:getPos()
 
     assertPosEqual(pos, {x=0, y=0, z=0})
-    assert(pos.orient == 0, "expected pos.orient=1")
+    assert(pos.orient == 0, "expected pos.orient=0")
 end
 
 
@@ -411,6 +411,49 @@ local function test_turnLeft()
 end
 
 
+local function turnToFace_template(start)
+    local tl, tr = igturtle.turnLeft, igturtle.turnRight
+
+    igturtle._orient.orient = start
+    igturtle.turnLeft = Spy(igturtle.turnLeft)
+    igturtle.turnRight = Spy(igturtle.turnRight)
+    igturtle:turnToFace(start)
+    igturtle.turnLeft:assertCallCount(0)
+    igturtle.turnRight:assertCallCount(0)
+
+    igturtle._orient.orient = start
+    igturtle.turnLeft = Spy(igturtle.turnLeft)
+    igturtle.turnRight = Spy(igturtle.turnRight)
+    igturtle:turnToFace((start + 1) % 4)
+    igturtle.turnLeft:assertCallCount(1)
+    igturtle.turnRight:assertCallCount(0)
+
+    igturtle._orient.orient = start
+    igturtle.turnLeft = Spy(igturtle.turnLeft)
+    igturtle.turnRight = Spy(igturtle.turnRight)
+    igturtle:turnToFace((start + 2) % 4)
+    igturtle.turnLeft:assertCallCount(0)
+    igturtle.turnRight:assertCallCount(2)
+
+    igturtle._orient.orient = start
+    igturtle.turnLeft = Spy(igturtle.turnLeft)
+    igturtle.turnRight = Spy(igturtle.turnRight)
+    igturtle:turnToFace((start + 3) % 4)
+    igturtle.turnLeft:assertCallCount(0)
+    igturtle.turnRight:assertCallCount(1)
+
+    igturtle.turnLeft, igturtle.turnRight = tl, tr
+end
+
+
+local function test_turnToFace()
+    turnToFace_template(0)
+    turnToFace_template(1)
+    turnToFace_template(2)
+    turnToFace_template(3)
+end
+
+
 test_posNew()
 test_posClone()
 test_posFromGps()
@@ -438,3 +481,4 @@ test_up()
 test_down()
 test_turnRight()
 test_turnLeft()
+test_turnToFace()

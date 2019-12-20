@@ -256,7 +256,7 @@ end
 
 
 function IgTurtle:turnToFace(orient)
-    if (orient - self._orient.orient) % 4 > 2 then
+    if (orient - self._orient.orient) % 4 < 2 then
         while self._orient.orient ~= orient do
             self:turnLeft()
         end
