@@ -454,6 +454,65 @@ local function test_turnToFace()
 end
 
 
+local function test_globalOrientFromForwardMotion()
+    local start = igturtle.Position:new()
+    assert(
+        igturtle:_globalOrientFromForwardMotion(start, {x=1, y=0, z=0})
+            == igturtle.EAST,
+        "expected orientation to be EAST"
+    )
+    assert(
+        igturtle:_globalOrientFromForwardMotion(start, {x=0, y=0, z=-1})
+            == igturtle.NORTH,
+        "expected orientation to be NORTH"
+    )
+    assert(
+        igturtle:_globalOrientFromForwardMotion(start, {x=-1, y=0, z=0})
+            == igturtle.WEST,
+        "expected orientation to be WEST"
+    )
+    assert(
+        igturtle:_globalOrientFromForwardMotion(start, {x=0, y=0, z=1})
+            == igturtle.SOUTH,
+        "expected orientation to be SOUTH"
+    )
+end
+
+
+local function test_setGps()
+    local origin = igturtle.Position:new()
+    local testGps = {1, 2, 3}
+    local expected = igturtle.Position:clone({x=-1, y=-2, z=-3})
+    igturtle._pos = origin:copy()
+
+    assert(igturtle._globalPosDiff == origin,
+           string.format(
+               "expected %s, got %s", tostring(origin),
+               tostring(igturtle._globalPosDiff)
+           ))
+    igturtle:setGps(testGps)
+    assert(igturtle._globalPosDiff == expected,
+           string.format(
+               "expected %s, got %s", tostring(expected),
+               tostring(igturtle._globalPosDiff)
+           ))
+end
+
+
+local function test_verifyGps()
+    local origin = igturtle.Position:new()
+    igturtle._pos = origin:copy()
+    igturtle._globalPosDiff = origin:copy()
+
+    local got = igturtle:_verifyGps({0, 0, 0})
+    assert(got, string.format("expected %s, got %s", tostring(true),
+                              tostring(got)))
+    got = igturtle:_verifyGps({1, 0, 0})
+    assert(not got, string.format("expected %s, got %s", tostring(false),
+                                  tostring(got)))
+end
+
+
 test_posNew()
 test_posClone()
 test_posFromGps()
@@ -482,3 +541,6 @@ test_down()
 test_turnRight()
 test_turnLeft()
 test_turnToFace()
+test_globalOrientFromForwardMotion()
+test_setGps()
+test_verifyGps()

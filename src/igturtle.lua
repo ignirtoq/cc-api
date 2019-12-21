@@ -431,6 +431,38 @@ function IgTurtle:findEmptyItemSlot()
 end
 
 
+-- Keep track of global position with output from gps.locate(). --
+function IgTurtle:setGps(gps)
+    self._globalPosDiff = self._pos - Position:fromGps(gps)
+end
+
+
+function IgTurtle:_globalOrientFromForwardMotion(start, end_)
+    local diff = Position:clone(end_) - Position:clone(start)
+    if diff == Position:clone({x=1, y=0, z=0}) then
+        return self.EAST
+    elseif diff == Position:clone({x=0, y=0, z=-1}) then
+        return self.NORTH
+    elseif diff == Position:clone({x=-1, y=0, z=0}) then
+        return self.WEST
+    elseif diff == Position:clone({x=0, y=0, z=1}) then
+        return self.SOUTH
+    end
+end
+
+
+function IgTurtle:_verifyGps(gps)
+    if gps == nil then
+        gps = {gps.locate()}
+        if #gps == 0 then
+            error('unable to get GPS position')
+        end
+    end
+    gps = Position:fromGps(gps)
+    return self._pos + self._globalPosDiff == gps
+end
+
+
 ----------------
 -- Public API --
 ----------------
