@@ -1,152 +1,17 @@
 -- Dependencies. --
 assert(ig, "igturtle API requires ig API")
-
--- Position abstraction. --
-local Position = {}
-local _PositionMt = getmetatable(Position) or {}
-setmetatable(Position, _PositionMt)
-
-
-function Position:new()
-    return ig.clone(Position, {x=0, y=0, z=0})
-end
-
-function Position:clone(p)
-    return ig.clone(Position, {x=p.x, y=p.y, z=p.z})
-end
-
-function Position:fromGps(g)
-    return ig.clone(Position, {x=g[1], y=g[2], z=g[3]})
-end
-
-
-function Position:copy()
-    return ig.clone(Position, {x=self.x, y=self.y, z=self.z})
-end
-
-
-function Position:distanceTo(other)
-    return math.abs(self.x - other.x) + math.abs(self.y - other.y) +
-           math.abs(self.z - other.z)
-end
-
-
-function Position:add(other)
-    self.x = self.x + other.x
-    self.y = self.y + other.y
-    self.z = self.z + other.z
-    return self
-end
-
-
-function Position:sub(other)
-    self.x = self.x - other.x
-    self.y = self.y - other.y
-    self.z = self.z - other.z
-    return self
-end
-
-
-function Position.sum(a, b)
-    return Position:clone(a):add(b)
-end
-
-
-function Position.difference(a, b)
-    return Position:clone(a):sub(b)
-end
-
-
-_PositionMt.__add = Position.sum
-_PositionMt.__sub = Position.difference
-_PositionMt.__tostring = ig.tableToString
-_PositionMt.__eq = function(a, b) return a.x==b.x and a.y==b.y and a.z==b.z end
-
-
--- Orientation abstraction. --
-local Orientation = {
-    -- Change in position when moving "forward" in given orientation. --
-    FORWARD_POS_CHANGE = {
-        [0]={x=0, y=0, z=1},
-        {x=1, y=0, z=0},
-        {x=0, y=0, z=-1},
-        {x=-1, y=0, z=0}
-    },
-    -- Change in position when moving "backward" in given orientation. --
-    BACK_POS_CHANGE = {
-        [0]={x=0, y=0, z=-1},
-        {x=-1, y=0, z=0},
-        {x=0, y=0, z=1},
-        {x=1, y=0, z=0}
-    }
-}
-local _OrientationMt = getmetatable(Orientation) or {}
-setmetatable(Orientation, _OrientationMt)
-
-
-function Orientation:new()
-    return ig.clone(Orientation, {orient=0})
-end
-
-
-function Orientation:clone(o)
-    return ig.clone(Orientation, {orient=o.orient})
-end
-
-
-function Orientation:copy()
-    return ig.clone(Orientation, {orient=self.orient})
-end
-
-
-function Orientation:add(other)
-    self.orient = (self.orient + other.orient) % 4
-    return self
-end
-
-
-function Orientation:sub(other)
-    self.orient = (self.orient - other.orient) % 4
-    return self
-end
-
-
-function Orientation.sum(a, b)
-    return Orientation:clone(a):add(b)
-end
-
-
-function Orientation.difference(a, b)
-    return Orientation:clone(a):sub(b)
-end
-
-
-function Orientation:turnLeft()
-    return self:add{orient=1}
-end
-
-
-function Orientation:turnRight()
-    return self:sub{orient=1}
-end
-
-
-_OrientationMt.__add = Orientation.sum
-_OrientationMt.__sub = Orientation.difference
-_OrientationMt.__tostring = ig.tableToString
-_OrientationMt.__eq = function(a, b) return a.orient==b.orient end
-
+ig.require("iggeo")
 
 -- Turtle singleton. --
 local IgTurtle = {
     -- Local coordinate data --
-    _pos = Position:new(),
-    _orient = Orientation:new(),
-    _home = Position:new(),
-    _fuelPos = ig.clone(Position, {x=1, y=0, z=0}),
+    _pos = iggeo.Position:new(),
+    _orient = iggeo.Orientation:new(),
+    _home = iggeo.Position:new(),
+    _fuelPos = ig.clone(iggeo.Position, {x=1, y=0, z=0}),
     -- Global coordinate data --
-    _globalPosDiff = Position:new(),
-    _globalOrientDiff = Orientation:new(),
+    _globalPosDiff = iggeo.Position:new(),
+    _globalOrientDiff = iggeo.Orientation:new(),
     -- Orientation constants --
     FORWARD = 0,
     LEFT = 1,
@@ -193,7 +58,7 @@ function IgTurtle:forward()
     -- Move into position and record movement. --
     local successfulMove = {turtle.forward()}
     if successfulMove[1] then
-        self._pos:add(Orientation.FORWARD_POS_CHANGE[self._orient.orient])
+        self._pos:add(iggeo.Orientation.FORWARD_POS_CHANGE[self._orient.orient])
     end
     return unpack(successfulMove)
 end
@@ -203,7 +68,7 @@ function IgTurtle:back()
     -- Move into position and record movement. --
     local successfulMove = {turtle.back()}
     if successfulMove[1] then
-        self._pos:add(Orientation.BACK_POS_CHANGE[self._orient.orient])
+        self._pos:add(iggeo.Orientation.BACK_POS_CHANGE[self._orient.orient])
     end
     return unpack(successfulMove)
 end
@@ -330,7 +195,7 @@ end
 -- Sets the home position of the turtle to its current position. --
 function IgTurtle:setHome()
     self._home = self._pos:copy()
-    self._orient = Orientation:new()
+    self._orient = iggeo.Orientation:new()
 end
 
 
@@ -344,7 +209,7 @@ function IgTurtle:setRefuel(pos)
     if not (type(pos) == "table" and pos.x and pos.y and pos.z) then
         pos = self._pos
     end
-    self._fuelPos = ig.clone(Position, pos):copy()
+    self._fuelPos = ig.clone(iggeo.Position, pos):copy()
 end
 
 
@@ -433,19 +298,19 @@ end
 
 -- Keep track of global position with output from gps.locate(). --
 function IgTurtle:setGps(gps)
-    self._globalPosDiff = self._pos - Position:fromGps(gps)
+    self._globalPosDiff = self._pos - iggeo.Position:fromGps(gps)
 end
 
 
 function IgTurtle:_globalOrientFromForwardMotion(start, end_)
-    local diff = Position:clone(end_) - Position:clone(start)
-    if diff == Position:clone({x=1, y=0, z=0}) then
+    local diff = iggeo.Position:clone(end_) - iggeo.Position:clone(start)
+    if diff == iggeo.Position:clone({x=1, y=0, z=0}) then
         return self.EAST
-    elseif diff == Position:clone({x=0, y=0, z=-1}) then
+    elseif diff == iggeo.Position:clone({x=0, y=0, z=-1}) then
         return self.NORTH
-    elseif diff == Position:clone({x=-1, y=0, z=0}) then
+    elseif diff == iggeo.Position:clone({x=-1, y=0, z=0}) then
         return self.WEST
-    elseif diff == Position:clone({x=0, y=0, z=1}) then
+    elseif diff == iggeo.Position:clone({x=0, y=0, z=1}) then
         return self.SOUTH
     end
 end
@@ -458,7 +323,7 @@ function IgTurtle:_verifyGps(gps)
             error('unable to get GPS position')
         end
     end
-    gps = Position:fromGps(gps)
+    gps = iggeo.Position:fromGps(gps)
     return self._pos + self._globalPosDiff == gps
 end
 
@@ -489,7 +354,7 @@ if ig.isCC() then
     BACKWARD = IgTurtle.BACKWARD
     LEFT = IgTurtle.LEFT
 else
-    IgTurtle.Position = Position
-    IgTurtle.Orientation = Orientation
+    IgTurtle.Position = iggeo.Position
+    IgTurtle.Orientation = iggeo.Orientation
     return IgTurtle
 end

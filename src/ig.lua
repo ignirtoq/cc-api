@@ -308,6 +308,7 @@ local function _loadAPI(args)
     _require("iginput", version)
     _require("igrednet", version)
     _require("igpower", version)
+    _require("iggeo", version)
     -- Check if this is a turtle. --
     if turtle then
         _require("igturtle", version)
