@@ -128,6 +128,23 @@ local function test_arrayToSet()
 end
 
 
+local function test_numericalSetToArray()
+    local tbl = {}
+    assertTablesEqual(
+        ig.numericalSetToArray{[1]=true, [2]=true, [3]=true},
+        {1, 2, 3}
+    )
+    assertTablesEqual(
+        ig.numericalSetToArray{[0]=true, [1]=true, [2]=true, [3]=true},
+        {0, 1, 2, 3}
+    )
+    assertTablesEqual(
+        ig.numericalSetToArray{[3]=true},
+        {3}
+    )
+end
+
+
 local function test_valuesToArray()
     local tbl, str = {}, 'hello'
     local map = {a=1, [true]=false, [tbl]=str}
@@ -235,6 +252,7 @@ end
 test_empty()
 test_waitFor()
 test_arrayToSet()
+test_numericalSetToArray()
 test_valuesToArray()
 test_extendTable()
 test_clone()

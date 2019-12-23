@@ -33,11 +33,22 @@ end
 
 -- Convert an array of items to a set (table mapping items to true).          --
 local function _arrayToSet(array)
-    set = {}
+    local set = {}
     for _, i in ipairs(array) do
         set[i] = true
     end
     return set
+end
+
+
+-- Convert a set of numbers to an array.                                      --
+local function _numericalSetToArray(set)
+    local array = {}
+    for k, _ in pairs(set) do
+        table.insert(array, k)
+    end
+    table.sort(array)
+    return array
 end
 
 
@@ -326,6 +337,7 @@ if _isCC() then
     empty = _empty
     waitFor = _waitFor
     arrayToSet = _arrayToSet
+    numericalSetToArray = _numericalSetToArray
     valuesToArray = _valuesToArray
     tableToString = _tableToString
     printTable = _printTable
@@ -341,6 +353,7 @@ else
         empty=_empty,
         waitFor=_waitFor,
         arrayToSet=_arrayToSet,
+        numericalSetToArray=_numericalSetToArray,
         valuesToArray=_valuesToArray,
         tableToString=_tableToString,
         printTable=_printTable,
