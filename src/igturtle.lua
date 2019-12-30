@@ -328,6 +328,20 @@ function IgTurtle:_verifyGps(gps)
 end
 
 
+-- Return an iterator over a path where the turtle will move to each position --
+-- at the start of each iteration.                                            --
+function IgTurtle:followPath(path)
+    assert(ig.instanceOf(path, iggeo.Path), 'path must be an iggeo Path')
+    local pathIt = path()
+    return function()
+        local pos = pathIt()
+        if pos == nil then return end
+        self:goTo(pos)
+        return pos
+    end
+end
+
+
 ----------------
 -- Public API --
 ----------------
@@ -353,6 +367,7 @@ if ig.isCC() then
     RIGHT = IgTurtle.RIGHT
     BACKWARD = IgTurtle.BACKWARD
     LEFT = IgTurtle.LEFT
+    followPath = ig.partial(IgTurtle.followPath, self)
 else
     IgTurtle.Position = iggeo.Position
     IgTurtle.Orientation = iggeo.Orientation

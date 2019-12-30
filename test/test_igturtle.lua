@@ -39,11 +39,11 @@ local function _moveTemplate(dir, posChange, inspect, dig)
 
     -- All checks false. --
     turtle[inspect] = Mock()
-    turtle[inspect]:whenCalled{when={}, thenReturn={false}}
+    turtle[inspect]:whenCalled{with={}, thenReturn={false}}
     turtle[dig] = Mock()
-    turtle[dig]:whenCalled{when={}, thenReturn={}}
+    turtle[dig]:whenCalled{with={}, thenReturn={}}
     turtle[dir] = Mock()
-    turtle[dir]:whenCalled{when={}, thenReturn={false}}
+    turtle[dir]:whenCalled{with={}, thenReturn={false}}
 
     ret = igturtle[dir](igturtle)
     assert(ret == false, string.format(
@@ -57,11 +57,11 @@ local function _moveTemplate(dir, posChange, inspect, dig)
 
     -- Inspect returns true, so dig should be called. --
     turtle[inspect] = Mock()
-    turtle[inspect]:whenCalled{when={}, thenReturn={true}}
+    turtle[inspect]:whenCalled{with={}, thenReturn={true}}
     turtle[dig] = Mock()
-    turtle[dig]:whenCalled{when={}, thenReturn={}}
+    turtle[dig]:whenCalled{with={}, thenReturn={}}
     turtle[dir] = Mock()
-    turtle[dir]:whenCalled{when={}, thenReturn={false}}
+    turtle[dir]:whenCalled{with={}, thenReturn={false}}
 
     ret = igturtle[dir](igturtle)
     assert(ret == false, string.format(
@@ -75,11 +75,11 @@ local function _moveTemplate(dir, posChange, inspect, dig)
 
     -- Successful move. --
     turtle[inspect] = Mock()
-    turtle[inspect]:whenCalled{when={}, thenReturn={false}}
+    turtle[inspect]:whenCalled{with={}, thenReturn={false}}
     turtle[dig] = Mock()
-    turtle[dig]:whenCalled{when={}, thenReturn={}}
+    turtle[dig]:whenCalled{with={}, thenReturn={}}
     turtle[dir] = Mock()
-    turtle[dir]:whenCalled{when={}, thenReturn={true}}
+    turtle[dir]:whenCalled{with={}, thenReturn={true}}
 
     assert(igturtle[dir](igturtle) == true, string.format(
         "expected igturtle:%s() to return true", dir
@@ -114,7 +114,7 @@ local function test_back()
 
     -- Failed move. --
     turtle.back = Mock()
-    turtle.back:whenCalled{when={}, thenReturn={false}}
+    turtle.back:whenCalled{with={}, thenReturn={false}}
     pos = igturtle:getPos()
     oldy = pos.y
 
@@ -130,7 +130,7 @@ local function test_back()
 
     -- Successful move. --
     turtle.back = Mock()
-    turtle.back:whenCalled{when={}, thenReturn={true}}
+    turtle.back:whenCalled{with={}, thenReturn={true}}
     pos = igturtle:getPos()
     oldy = pos.y
 
@@ -149,14 +149,14 @@ local function test_turn(dir, newOrient)
 
     -- Failed move. --
     turtle[dir] = Mock()
-    turtle[dir]:whenCalled{when={}, thenReturn={false}}
+    turtle[dir]:whenCalled{with={}, thenReturn={false}}
     assert(not igturtle[dir](igturtle))
     turtle[dir]:assertCallCount(1)
     assertOrientEqual(igturtle:getPos(), {orient=0})
 
     -- Successful move. --
     turtle[dir] = Mock()
-    turtle[dir]:whenCalled{when={}, thenReturn={true}}
+    turtle[dir]:whenCalled{with={}, thenReturn={true}}
     assert(igturtle[dir](igturtle))
     turtle[dir]:assertCallCount(1)
     assertOrientEqual(igturtle:getPos(), {orient=newOrient})
@@ -278,6 +278,42 @@ local function test_verifyGps()
 end
 
 
+local function test_followPath()
+    local function setupMockGoTo(path)
+        igturtle.goTo = Mock()
+        for pos in path() do
+            igturtle.goTo:whenCalled{with={igturtle, pos}, thenReturn={true}}
+        end
+    end
+
+    local path, old_goTo, turtlePathIt
+    old_goTo = igturtle.goTo
+    path = iggeo.Path:clone{
+        iggeo.Position:clone{x=0, y=0, z=0},
+        iggeo.Position:clone{x=1, y=0, z=0},
+        iggeo.Position:clone{x=1, y=1, z=0}
+    }
+
+    -- Path assertion --
+    assert(not pcall(igturtle.followPath, igturtle),
+           'expected error when followPath() called with nil')
+    assert(pcall(igturtle.followPath, igturtle, path),
+           'expected no error when followPath() called with path')
+
+    -- Actual iteration --
+    setupMockGoTo(path)
+    for ind, pos in ig.enumerate(igturtle:followPath(path)) do
+        igturtle.goTo:assertCallCount(1)
+        igturtle.goTo:assertCallMatches({with=pos})
+        assertPosEqual(pos, path[ind])
+        setupMockGoTo(path)
+    end
+
+    -- Reset mocked object(s) --
+    igturtle.goTo = old_goTo
+end
+
+
 test_startPos()
 test_forward()
 test_back()
@@ -289,3 +325,4 @@ test_turnToFace()
 test_globalOrientFromForwardMotion()
 test_setGps()
 test_verifyGps()
+test_followPath()
