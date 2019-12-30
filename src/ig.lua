@@ -222,6 +222,28 @@ local function _clone(existing, new)
 end
 
 
+local function _getParent(object)
+    local mt = getmetatable(object) or {}
+    return mt.__index
+end
+
+
+-- Determine if an object is an instance of a parent class through clone().   --
+local function _instanceOf(object, candidateParent)
+    if type(object) ~= 'table' or type(candidateParent) ~= 'table' then
+        return false
+    end
+
+    repeat
+        object = _getParent(object)
+        if object == candidateParent then
+            return true
+        end
+    until object == nil
+    return false
+end
+
+
 --------------------------------
 -- Module Loading Abstraction --
 --------------------------------
@@ -411,6 +433,7 @@ if _isCC() then
     iter = _iter
     zip = _zip
     enumerate = _enumerate
+    instanceOf = _instanceOf
 else
     return {
         empty=_empty,
@@ -429,6 +452,7 @@ else
         partial=_partial,
         iter=_iter,
         zip=_zip,
-        enumerate=_enumerate
+        enumerate=_enumerate,
+        instanceOf=_instanceOf
     }
 end

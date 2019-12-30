@@ -383,6 +383,40 @@ local function test_clone()
 end
 
 
+local function test_instanceOf()
+    local child, grandchild, parent
+
+    -- Direct inheritance --
+    parent = {}
+    child = ig.clone(parent)
+    assert(ig.instanceOf(child, parent),
+           'expected child to be instanceOf parent')
+    assert(not ig.instanceOf(parent, child),
+           'expected parent not to be instanceOf child')
+    assert(not ig.instanceOf(child, nil),
+           'expected child not to be instanceOf nil')
+    assert(not ig.instanceOf(nil, parent),
+           'expected nil not to be instanceOf parent')
+
+    -- Further chaining --
+    parent = {}
+    child = ig.clone(parent)
+    grandchild = ig.clone(child)
+    assert(ig.instanceOf(child, parent),
+           'expected child to be instanceOf parent')
+    assert(ig.instanceOf(grandchild, parent),
+           'expected grandchild to be instanceOf parent')
+    assert(ig.instanceOf(grandchild, child),
+           'expected grandchild to be instanceOf child')
+    assert(not ig.instanceOf(parent, child),
+           'expected parent not to be instanceOf child')
+    assert(not ig.instanceOf(parent, grandchild),
+           'expected parent not to be instanceOf grandchild')
+    assert(not ig.instanceOf(child, grandchild),
+           'expected child not to be instanceOf grandchild')
+end
+
+
 local function test_require()
 
     -- No-op for "modules" that exist. --
@@ -403,4 +437,5 @@ test_iter()
 test_zip()
 test_enumerate()
 test_clone()
+test_instanceOf()
 test_require()
