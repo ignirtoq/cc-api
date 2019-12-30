@@ -123,6 +123,66 @@ local function _partial(func, ...)
 end
 
 
+-- Ensure an iterator is a self-contained, stateful iterator.                 --
+local function _iter(...)
+    local iterFields = {...}
+    -- Case: iterator (stateful or stateless) passed inside table
+    if type(iterFields[1]) == 'table' then
+        iterFields = iterFields[1]
+    end
+    -- Case: stateful iterator
+    if #iterFields == 1 then
+        return iterFields[1]
+    end
+    -- Case: stateless iterator not in table
+    func, seq, control = unpack(iterFields)
+    return function()
+        local controlVal
+        if control ~= nil then
+            controlVal = control
+            control = control + 1
+        end
+        return func(seq, controlVal)
+    end
+end
+
+
+-- Combine multiple iterators into a single iterator that yields a collection --
+-- of one element from each of the constituent iterators.                     --
+local function _zip(...)
+    local iterators = {...}
+    -- No iterators case.
+    if #iterators == 0 then
+        return function() end
+    end
+    return function()
+        local values = {}
+        for _, func in ipairs(iterators) do
+            local val = {func()}
+            if #val == 0 then return end
+            for _, v in ipairs(val) do
+                values[#values+1] = v
+            end
+        end
+        return unpack(values)
+    end
+end
+
+
+-- Create a new iterator that provides a count alongside provided iterator.   --
+local function _enumerate(iterator, start)
+    assert(type(iterator) == 'function', 'iterator must be a function')
+    start = start ~= nil and start or 1
+    local index = start - 1
+    return function()
+        local values = {iterator()}
+        if #values == 0 then return end
+        index = index + 1
+        return unpack(_extendTable({index}, values))
+    end
+end
+
+
 -------------------------
 -- Inheritance Helpers --
 -------------------------
@@ -348,6 +408,9 @@ if _isCC() then
     loadAPI = _loadAPI
     isCC = _isCC
     partial = _partial
+    iter = _iter
+    zip = _zip
+    enumerate = _enumerate
 else
     return {
         empty=_empty,
@@ -363,6 +426,9 @@ else
         require3rdParty=_require3rdParty,
         loadAPI=_loadAPI,
         isCC=_isCC,
-        partial=_partial
+        partial=_partial,
+        iter=_iter,
+        zip=_zip,
+        enumerate=_enumerate
     }
 end

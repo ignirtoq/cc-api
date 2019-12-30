@@ -70,6 +70,16 @@ local function _copyNoIndex(tbl)
     return new
 end
 
+local function values(arr)
+    local ind = 0
+    return function()
+        ind = ind + 1
+        if #arr >= ind then
+            return arr[ind]
+        end
+    end
+end
+
 
 local function test_empty()
     local emptyTable = {}
@@ -209,6 +219,140 @@ local function test_extendTable()
 end
 
 
+local function test_iter()
+    local array, baseIt, it, itArray
+
+    -- Unwrapped stateless case --
+    array = {1, 'a', {}}
+    it = {ig.iter(ipairs(array))}
+    assert(#it == 1, 'expected single return value from iter()')
+
+    it = it[1]
+    itArray = {}
+    for _, val in it do
+        itArray[#itArray+1] = val
+    end
+
+    assertArraysEqual(array, itArray)
+
+    -- Wrapped stateless case --
+    array = {'1', {}, 3}
+    it = {ig.iter({ipairs(array)})}
+    assert(#it == 1, 'expected single return value from iter()')
+
+    it = it[1]
+    itArray = {}
+    for _, val in it do
+        itArray[#itArray+1] = val
+    end
+
+    assertArraysEqual(array, itArray)
+
+    -- Unwrapped stateful case --
+    array = {{}, 2, 'b'}
+    baseIt = values(array)
+    it = {ig.iter(baseIt)}
+    assert(#it == 1, 'expected single return value from iter()')
+    it = it[1]
+    assert(it == baseIt, 'expected stateful iterator to match iter() output')
+
+    -- Wrapped stateful case --
+    array = {'a', {}, 3}
+    baseIt = values(array)
+    it = {ig.iter({baseIt})}
+    assert(#it == 1, 'expected single return value from iter()')
+    it = it[1]
+    assert(it == baseIt, 'expected stateful iterator to match iter() output')
+end
+
+
+local function test_zip()
+    local it1, it2, it3, it4, arr
+
+    -- Empty case --
+    for _ in ig.zip() do
+        assert(false, 'no arguments to zip should not enter loop')
+    end
+
+    -- Symmetric two-iterator case --
+    it1 = values{1, 3, 5}
+    it2 = values{2, 4, 6}
+    arr = {}
+    for val1, val2 in ig.zip(it1, it2) do
+        arr[#arr+1] = val1
+        arr[#arr+1] = val2
+    end
+    assertArraysEqual(arr, {1, 2, 3, 4, 5, 6})
+
+    -- Asymmetric two-iterator case --
+    it1 = values{1, 3, 5}
+    it2 = values{2, 4}
+    arr = {}
+    for val1, val2 in ig.zip(it1, it2) do
+        arr[#arr+1] = val1
+        arr[#arr+1] = val2
+    end
+    assertArraysEqual(arr, {1, 2, 3, 4})
+
+    -- Multi-iterator case --
+    it1 = values{'a', 5}
+    it2 = values{'b', 6}
+    it3 = values{3, 'c'}
+    it4 = values{4, 'd'}
+    arr = {}
+    for v1, v2, v3, v4 in ig.zip(it1, it2, it3, it4) do
+        arr[#arr+1] = v1
+        arr[#arr+1] = v2
+        arr[#arr+1] = v3
+        arr[#arr+1] = v4
+    end
+    assertArraysEqual(arr, {'a', 'b', 3, 4, 5, 6, 'c', 'd'})
+end
+
+
+local function test_enumerate()
+    local it, enmArr, indArr, valArr
+    local emptyTable = {}
+    local testValues = {1, 'a', emptyTable}
+
+    -- Empty case --
+    assert(not pcall(ig.enumerate),
+           'expected empty enumerate to throw exception')
+
+    -- Basic case --
+    it = values(testValues)
+    enmArr, valArr = {}, {}
+    for enm, val in ig.enumerate(it) do
+        enmArr[#enmArr+1] = enm
+        valArr[#valArr+1] = val
+    end
+    assertArraysEqual(valArr, testValues)
+    assertArraysEqual(enmArr, {1, 2, 3})
+
+    -- Custom-start case --
+    it = values(testValues)
+    enmArr, valArr = {}, {}
+    for enm, val in ig.enumerate(it, 0) do
+        enmArr[#enmArr+1] = enm
+        valArr[#valArr+1] = val
+    end
+    assertArraysEqual(valArr, testValues)
+    assertArraysEqual(enmArr, {0, 1, 2})
+
+    -- Multi-value case --
+    it = ig.iter(ipairs(testValues))
+    enmArr, indArr, valArr = {}, {}, {}
+    for enm, ind, val in ig.enumerate(it, 2) do
+        enmArr[#enmArr+1] = enm
+        indArr[#indArr+1] = ind
+        valArr[#valArr+1] = val
+    end
+    assertArraysEqual(enmArr, {2, 3, 4})
+    assertArraysEqual(indArr, {1, 2, 3})
+    assertArraysEqual(valArr, testValues)
+end
+
+
 local function test_clone()
     local existing, new
 
@@ -255,5 +399,8 @@ test_arrayToSet()
 test_numericalSetToArray()
 test_valuesToArray()
 test_extendTable()
+test_iter()
+test_zip()
+test_enumerate()
 test_clone()
 test_require()
