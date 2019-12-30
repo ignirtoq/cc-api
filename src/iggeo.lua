@@ -163,11 +163,15 @@ function _Path:pop()
     return p
 end
 
-function _Path:iter(start)
+function _Path:iter(start, loop)
     start = start or 1
+    loop = loop ~= nil and loop or false
     index = start - 1
     return function()
         index = index + 1
+        if loop and self[index] == nil then
+            index = start
+        end
         return self[index]
     end
 end

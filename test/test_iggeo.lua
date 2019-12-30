@@ -357,13 +357,28 @@ local function test_Path_iter()
         iggeo.Position:clone{x=2, y=22, z=222}
     }
     local path = iggeo.Path:clone(posArray)
-    local testArray
+    local testArray, maxCount
 
+    -- Basic case --
     testArray = {}
     for pos in path() do
         testArray[#testArray+1] = pos
     end
     assertArraysEqual(posArray, testArray)
+
+    -- With start value --
+    testArray = {}
+    for pos in path(1) do
+        testArray[#testArray+1] = pos
+    end
+    assertArraysEqual(posArray, testArray)
+
+    -- With loop --
+    maxCount = 20
+    for count, pos in ig.enumerate(path(1, true)) do
+        assertPosEqual(pos, posArray[((count-1) % 2) + 1])
+        if count > maxCount then break end
+    end
 end
 
 
