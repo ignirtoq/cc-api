@@ -5,6 +5,21 @@ local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
 
 
+local function assertArraysEqual(a, b)
+    local i
+    assert(#a == #b, string.format(
+        "arrays different lengths: %d != %d", #a, #b
+    ))
+
+    for i = 1,#a,1 do
+        assert(a[i] == b[i], string.format(
+            "arrays have different values at %d: %s != %s",
+            i, tostring(a[i]), tostring(b[i])
+        ))
+    end
+end
+
+
 local function assertPosEqual(p1, p2)
     assert(p1.x == p2.x, string.format("%d != %d", p1.x, p2.x))
     assert(p1.y == p2.y, string.format("%d != %d", p1.y, p2.y))
@@ -255,6 +270,103 @@ local function test_orientEq()
 end
 
 
+local function test_Path_new()
+    local newPath = iggeo.Path:new()
+
+    assert(#newPath == 0, 'expected empy path')
+end
+
+
+local function test_Path_clone()
+    local path
+    local posArray = {
+        iggeo.Position:clone{x=1, y=11, z=111},
+        iggeo.Position:clone{x=2, y=22, z=222}
+    }
+
+    path = iggeo.Path:clone(posArray)
+    assert(#path == #posArray, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for ind, val in ipairs(posArray) do
+        assert(path[ind] == val, string.format(
+            'expected %s, got %s', tostring(val), tostring(path[ind])
+        ))
+    end
+end
+
+
+local function test_Path_append()
+    local expval, pos, path, retval
+
+    pos = iggeo.Position:clone{x=1, y=11, z=111}
+    path = iggeo.Path:new()
+    expval = 0
+    assert(#path == expval, string.format(
+        'expected %d, got %d', expval, #path
+    ))
+    retval = path:append(pos)
+    assert(retval == path, 'expected return value of path:append() to be path')
+    expval = 1
+    assert(#path == expval, string.format(
+        'expected %d, got %d', expval, #path
+    ))
+    assertPosEqual(path[1], pos)
+end
+
+
+local function test_Path_pop()
+    local path = iggeo.Path:clone{
+        iggeo.Position:clone{x=1, y=11, z=111},
+        iggeo.Position:clone{x=2, y=22, z=222}
+    }
+    local exppos, expval, pos
+
+    expval = 2
+    assert(#path == expval, string.format(
+        'expected %d, got %d', expval, #path
+    ))
+
+    exppos = path[#path]
+    expval = 1
+    pos = path:pop()
+    assert(#path == expval, string.format(
+        'expected %d, got %d', expval, #path
+    ))
+    assertPosEqual(pos, exppos, string.format(
+        'expected %s, got %s', tostring(exppos), tostring(pos)
+    ))
+
+    exppos = path[#path]
+    expval = 0
+    pos = path:pop()
+    assert(#path == expval, string.format(
+        'expected %d, got %d', expval, #path
+    ))
+    assertPosEqual(pos, exppos, string.format(
+        'expected %s, got %s', tostring(exppos), tostring(pos)
+    ))
+
+    assert(not pcall(path.pop, path), 'expected path:pop() to throw error')
+end
+
+
+local function test_Path_iter()
+    local posArray = {
+        iggeo.Position:clone{x=1, y=11, z=111},
+        iggeo.Position:clone{x=2, y=22, z=222}
+    }
+    local path = iggeo.Path:clone(posArray)
+    local testArray
+
+    testArray = {}
+    for pos in path() do
+        testArray[#testArray+1] = pos
+    end
+    assertArraysEqual(posArray, testArray)
+end
+
+
 test_posNew()
 test_posClone()
 test_posFromGps()
@@ -275,3 +387,8 @@ test_orientDifference()
 test_orientTurnLeft()
 test_orientTurnRight()
 test_orientEq()
+test_Path_new()
+test_Path_clone()
+test_Path_append()
+test_Path_pop()
+test_Path_iter()

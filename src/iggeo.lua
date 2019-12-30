@@ -137,12 +137,55 @@ _OrientationMt.__tostring = ig.tableToString
 _OrientationMt.__eq = function(a, b) return a.orient==b.orient end
 
 
+-- Path through space abstraction
+local _Path = {}
+local _PathMt = getmetatable(_Path) or {}
+setmetatable(_Path, _PathMt)
+
+
+function _Path:new()
+    return ig.clone(_Path, {})
+end
+
+function _Path:clone(p)
+    return ig.clone(_Path, ig.extendTable({}, p))
+end
+
+function _Path:append(p)
+    table.insert(self, p)
+    return self
+end
+
+function _Path:pop()
+    assert(#self > 0, 'path is empty: no elements to pop')
+    local p = self[#self]
+    self[#self] = nil
+    return p
+end
+
+function _Path:iter(start)
+    start = start or 1
+    index = start - 1
+    return function()
+        index = index + 1
+        return self[index]
+    end
+end
+
+_PathMt.__call = _Path.iter
+
+
 ----------------
 -- Public API --
 ----------------
 if ig.isCC() then
     Position = _Position
     Orientation = _Orientation
+    Path = _Path
 else
-    return {Position=_Position, Orientation=_Orientation}
+    return {
+        Position=_Position,
+        Orientation=_Orientation,
+        Path=_Path
+    }
 end
