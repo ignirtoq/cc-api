@@ -147,14 +147,17 @@ function _Path:new()
     return ig.clone(_Path, {})
 end
 
+
 function _Path:clone(p)
     return ig.clone(_Path, ig.extendTable({}, p))
 end
+
 
 function _Path:append(p)
     table.insert(self, p)
     return self
 end
+
 
 function _Path:pop()
     assert(#self > 0, 'path is empty: no elements to pop')
@@ -163,10 +166,12 @@ function _Path:pop()
     return p
 end
 
-function _Path:iter(start, loop)
-    start = start or 1
-    loop = loop ~= nil and loop or false
-    index = start - 1
+
+function _Path:iter(args)
+    args = args or {}
+    local start = args.start or 1
+    local loop = args.loop ~= nil and args.loop or false
+    local index = start - 1
     return function()
         index = index + 1
         if loop and self[index] == nil then
@@ -175,6 +180,7 @@ function _Path:iter(start, loop)
         return self[index]
     end
 end
+
 
 _PathMt.__call = _Path.iter
 

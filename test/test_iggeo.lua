@@ -368,14 +368,14 @@ local function test_Path_iter()
 
     -- With start value --
     testArray = {}
-    for pos in path(1) do
+    for pos in path{start=#posArray} do
         testArray[#testArray+1] = pos
     end
-    assertArraysEqual(posArray, testArray)
+    assertArraysEqual({posArray[#posArray]}, testArray)
 
     -- With loop --
     maxCount = 20
-    for count, pos in ig.enumerate(path(1, true)) do
+    for count, pos in ig.enumerate(path{loop=true}) do
         assertPosEqual(pos, posArray[((count-1) % 2) + 1])
         if count > maxCount then break end
     end
