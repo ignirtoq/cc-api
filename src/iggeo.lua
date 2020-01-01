@@ -182,6 +182,58 @@ function _Path:iter(args)
 end
 
 
+-- Given a starting corner and an opposite corner, generates a zig-zag        --
+-- space-filling path.  Not guaranteed to end at the opposite corner, but     --
+-- will touch it.                                                             --
+function _Path:generateSpaceFilling(start, opposite)
+    assert(ig.instanceOf(start, _Position)
+           and ig.instanceOf(opposite, _Position),
+           'start and opposite must be Position objects')
+    local diff = opposite - start
+    -- Length of each side of the rectangular prism --
+    local length = _Position:clone{
+        x=math.abs(diff.x)+1,
+        y=math.abs(diff.y)+1,
+        z=math.abs(diff.z)+1
+    }
+    -- Overall sign of motion for each dimension --
+    local d = _Position:clone{
+        x = diff.x >= 0 and 1 or -1,
+        y = diff.y >= 0 and 1 or -1,
+        z = diff.z >= 0 and 1 or -1
+    }
+    local volume = length.x * length.y * length.z
+    -- Variable to store sign calculations for faster-incrementing dimensions --
+    local sign
+    -- Variable to store relative motion for each iteration --
+    local step
+    -- Output array to be cloned into a Path --
+    local path = {_Position:clone(start)}
+
+    -- Iteration order (slow to fast): y, z, x --
+    -- We iterate through the whole volume less the startig position, which we
+    -- get for free.  With zero-based iteration (it mades the modulus formulas
+    -- nicer) we subtract another from the volume, leaving volume-2.
+    for t = 0, volume-2, 1 do
+        if t % (length.x*length.z) == (length.x*length.z - 1) then
+            -- Step in the slowest (y) direction --
+            step = {x=0, y=d.y, z=0}
+        elseif t % length.x == length.x - 1 then
+            -- Step in middle (z) direction --
+            sign = (-1)^math.floor(t/(length.x*length.z))
+            step = {x=0, y=0, z=sign*d.z}
+        else
+            -- Step in fastest (x) direction --
+            sign = (-1)^math.floor(t/length.x)
+            step = {x=sign*d.x, y=0, z=0}
+        end
+        path[#path+1] = path[#path] + step
+    end
+
+    return _Path:clone(path)
+end
+
+
 _PathMt.__call = _Path.iter
 
 

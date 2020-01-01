@@ -382,6 +382,130 @@ local function test_Path_iter()
 end
 
 
+local function test_Path_generateSpaceFilling()
+    local function values(arr)
+        local fun = ipairs(arr)
+        local step = 0
+        return function()
+            local ind, val = fun(arr, step)
+            step = ind
+            return val
+        end
+    end
+    local path, posArray, start, opposite
+
+    -- One tile in x --
+    start = iggeo.Position:clone{x=0, y=0, z=0}
+    opposite = iggeo.Position:clone{x=1, y=0, z=0}
+    posArray = {
+        {x=0, y=0, z=0},
+        {x=1, y=0, z=0}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+
+    -- One tile in z --
+    start = iggeo.Position:clone{x=0, y=0, z=0}
+    opposite = iggeo.Position:clone{x=0, y=0, z=1}
+    posArray = {
+        {x=0, y=0, z=0},
+        {x=0, y=0, z=1}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+
+    -- One tile in y --
+    start = iggeo.Position:clone{x=0, y=0, z=0}
+    opposite = iggeo.Position:clone{x=0, y=1, z=0}
+    posArray = {
+        {x=0, y=0, z=0},
+        {x=0, y=1, z=0}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+
+    -- One tile each in x, z --
+    start = iggeo.Position:clone{x=0, y=0, z=0}
+    opposite = iggeo.Position:clone{x=1, y=0, z=1}
+    posArray = {
+        {x=0, y=0, z=0},
+        {x=1, y=0, z=0},
+        {x=1, y=0, z=1},
+        {x=0, y=0, z=1}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+
+    -- One tile each in x, z in reverse --
+    start = iggeo.Position:clone{x=1, y=0, z=1}
+    opposite = iggeo.Position:clone{x=0, y=0, z=0}
+    posArray = {
+        {x=1, y=0, z=1},
+        {x=0, y=0, z=1},
+        {x=0, y=0, z=0},
+        {x=1, y=0, z=0}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+
+    -- Simulated (tiny) quarry path --
+    start = iggeo.Position:clone{x=0, y=0, z=0}
+    opposite = iggeo.Position:clone{x=2, y=-1, z=2}
+    posArray = {
+        {x=0, y=0, z=0},
+        {x=1, y=0, z=0},
+        {x=2, y=0, z=0},
+        {x=2, y=0, z=1},
+        {x=1, y=0, z=1},
+        {x=0, y=0, z=1},
+        {x=0, y=0, z=2},
+        {x=1, y=0, z=2},
+        {x=2, y=0, z=2},
+        {x=2, y=-1, z=2},
+        {x=1, y=-1, z=2},
+        {x=0, y=-1, z=2},
+        {x=0, y=-1, z=1},
+        {x=1, y=-1, z=1},
+        {x=2, y=-1, z=1},
+        {x=2, y=-1, z=0},
+        {x=1, y=-1, z=0},
+        {x=0, y=-1, z=0}
+    }
+    path = iggeo.Path:generateSpaceFilling(start, opposite)
+    assert(#posArray == #path, string.format(
+        'expected %d, got %d', #posArray, #path
+    ))
+    for exppos, pathpos in ig.zip(values(posArray), path()) do
+        assertPosEqual(exppos, pathpos)
+    end
+end
+
+
 test_posNew()
 test_posClone()
 test_posFromGps()
@@ -407,3 +531,4 @@ test_Path_clone()
 test_Path_append()
 test_Path_pop()
 test_Path_iter()
+test_Path_generateSpaceFilling()
