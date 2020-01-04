@@ -13,6 +13,12 @@ local ProgrammableFn = {}
 ProgrammableFn.__index = ProgrammableFn
 
 
+local function behaviourSideEffect( behaviour, args )
+    local next = behaviour.nextReturnSet
+    local sideEffect = behaviour.sideEffects[next]
+    sideEffect(unpack(args))
+end
+
 local function behaviourReturnValues( behaviour )
     local next = behaviour.nextReturnSet
 
@@ -33,6 +39,7 @@ function ProgrammableFn:__call( ... )
     if not behaviour then
         error('No matching behaviour for call.', 2)
     end
+    behaviourSideEffect(behaviour, {...})
     return behaviourReturnValues(behaviour)
 end
 
@@ -55,15 +62,18 @@ end
 function ProgrammableFn:whenCalled( specification )
     local arguments = specification.with or {}
     local returnSet = specification.thenReturn or {}
+    local sideEffect = specification.sideEffect or function() end
 
     local behaviour = self:_findMatchingBehaviour(arguments)
     if behaviour then
         table.insert(behaviour.returnSets, returnSet)
+        table.insert(behaviour.sideEffects, sideEffect)
     else
         behaviour = {
             arguments = arguments,
             returnSets = { returnSet },
-            nextReturnSet = 1
+            nextReturnSet = 1,
+            sideEffects = { sideEffect }
         }
         table.insert(self.behaviours, behaviour)
     end

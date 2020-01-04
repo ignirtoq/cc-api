@@ -33,7 +33,12 @@ end
 
 
 function IgTurtle:getOrient()
-    return self.orient:copy()
+    return self._orient:copy()
+end
+
+
+function IgTurtle:getHome()
+    return self._home:copy()
 end
 
 
@@ -133,18 +138,21 @@ function IgTurtle:turnToFace(orient)
 end
 
 
-function IgTurtle:goTo(x, y, z)
+local function _coordsToPos(x, y, z)
     if type(x) == "table" then
-        assert(type(x.x) == "number" and type(x.y) == "number",
-               "goTo() table argument requires numerical x and y members")
-        z = x.z or self._pos.z
-        y = x.y
-        x = x.x
+        assert(type(x.x) == "number" and type(x.y) == "number"
+               and type(x.z) == "number",
+               "table argument requires numerical x, y, and z members")
+        return iggeo.Position:clone(x)
     end
-    assert(type(x) == "number" and type(y) == "number",
-           "goTo() requires both x and y coordinates as numbers")
-    z = z or IgTurtle._pos.z
-    local dest = {x=x, y=y, z=z}
+    assert(type(x) == "number" and type(y) == "number" and type(z) == "number",
+           "numerical x, y, and z coordinates required")
+    return iggeo.Position:clone{x=x, y=y, z=z}
+end
+
+
+function IgTurtle:goTo(x, y, z)
+    local dest = _coordsToPos(x, y, z)
     local pos = self._pos
     if turtle.getFuelLevel() < pos:distanceTo(dest) then
         return false, "not enough fuel"
@@ -154,7 +162,7 @@ function IgTurtle:goTo(x, y, z)
     -- vertical --
     if pos.y ~= dest.y then
         local yDirUp = pos.y > dest.y and 0 or 1
-        while pos.y ~= dest.y do
+        while self._pos.y ~= dest.y do
             successfulMove = yDirUp == 1 and {self:up()} or {self:down()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
@@ -166,7 +174,7 @@ function IgTurtle:goTo(x, y, z)
         else
             self:turnToFace(self.FORWARD)
         end
-        while pos.z ~= dest.z do
+        while self._pos.z ~= dest.z do
             successfulMove = {self:forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
@@ -178,11 +186,13 @@ function IgTurtle:goTo(x, y, z)
         else
             self:turnToFace(self.LEFT)
         end
-        while pos.x ~= dest.x do
+        while self._pos.x ~= dest.x do
             successfulMove = {self:forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
     end
+
+    return true
 end
 
 
@@ -330,9 +340,9 @@ end
 
 -- Return an iterator over a path where the turtle will move to each position --
 -- at the start of each iteration.                                            --
-function IgTurtle:followPath(path)
+function IgTurtle:followPath(path, iterargs)
     assert(ig.instanceOf(path, iggeo.Path), 'path must be an iggeo Path')
-    local pathIt = path()
+    local pathIt = path(iterargs)
     return function()
         local pos = pathIt()
         if pos == nil then return end
@@ -354,6 +364,8 @@ if ig.isCC() then
     turnLeft = ig.partial(IgTurtle.turnLeft, IgTurtle)
     turnToFace = ig.partial(IgTurtle.turnToFace, IgTurtle)
     getPos = ig.partial(IgTurtle.getPos, IgTurtle)
+    getOrient = ig.partial(IgTurtle.getOrient, IgTurtle)
+    getHome = ig.partial(IgTurtle.getHome, IgTurtle)
     getRefuelPos = ig.partial(IgTurtle.getRefuelPos, IgTurtle)
     goTo = ig.partial(IgTurtle.goTo, IgTurtle)
     goHome = ig.partial(IgTurtle.goHome, IgTurtle)

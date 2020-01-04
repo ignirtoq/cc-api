@@ -219,6 +219,193 @@ local function test_turnToFace()
 end
 
 
+local function test_goTo()
+    local function setupMocksForGoTo()
+        turtle.getFuelLevel = Mock()
+        turtle.getFuelLevel:whenCalled{with={}, thenReturn={math.huge}}
+
+        igturtle.forward = Mock()
+        igturtle.back = Mock()
+        igturtle.up = Mock()
+        igturtle.down = Mock()
+        igturtle.turnRight = Mock()
+        igturtle.turnLeft = Mock()
+        igturtle.turnToFace = Mock()
+
+        igturtle._pos = iggeo.Position:clone{x=0, y=0, z=0}
+        igturtle._orient.orient = 0
+    end
+    local function addToPos(movement)
+        igturtle._pos = igturtle._pos + iggeo.Position:clone(movement)
+    end
+
+    local _forward = igturtle.forward
+    local _back = igturtle.back
+    local _up = igturtle.up
+    local _down = igturtle.down
+    local _right = igturtle.turnRight
+    local _left = igturtle.turnLeft
+    local _face = igturtle.turnToFace
+    local upSideEffect = ig.partial(addToPos, {x=0, y=1, z=0})
+    local retval, forwardSideEffect
+
+    -- No movement --
+    setupMocksForGoTo()
+    igturtle.forward:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.back:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.up:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.down:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.LEFT},
+                                   thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.RIGHT},
+                                   thenReturn={false}}
+
+    retval = igturtle:goTo(0, 0, 0)
+    assert(retval, string.format(
+        "expected %s, got %s", tostring(true), tostring(retval)
+    ))
+    turtle.getFuelLevel:assertCallCount(1)
+    igturtle.forward:assertCallCount(0)
+    igturtle.back:assertCallCount(0)
+    igturtle.up:assertCallCount(0)
+    igturtle.down:assertCallCount(0)
+    igturtle.turnToFace:assertCallCount(0)
+
+    -- Failed movement --
+    setupMocksForGoTo()
+    igturtle.forward:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.back:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.up:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.down:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.LEFT},
+                                   thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.RIGHT},
+                                   thenReturn={false}}
+
+    retval = igturtle:goTo(0, 10, 0)
+    assert(not retval, string.format(
+        "expected %s, got %s", tostring(false), tostring(retval)
+    ))
+    turtle.getFuelLevel:assertCallCount(1)
+    igturtle.forward:assertCallCount(0)
+    igturtle.back:assertCallCount(0)
+    igturtle.up:assertCallCount(1)
+    igturtle.down:assertCallCount(0)
+    igturtle.turnToFace:assertCallCount(0)
+
+    -- Successful movement up --
+    setupMocksForGoTo()
+    igturtle.forward:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.back:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.up:whenCalled{with={igturtle}, thenReturn={true},
+                           sideEffect=upSideEffect}
+    igturtle.down:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.LEFT},
+                                   thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.RIGHT},
+                                   thenReturn={false}}
+
+    retval = igturtle:goTo(0, 10, 0)
+    assert(retval, string.format(
+        "expected %s, got %s", tostring(false), tostring(retval)
+    ))
+    turtle.getFuelLevel:assertCallCount(1)
+    igturtle.forward:assertCallCount(0)
+    igturtle.back:assertCallCount(0)
+    igturtle.up:assertCallCount(10)
+    igturtle.down:assertCallCount(0)
+    igturtle.turnToFace:assertCallCount(0)
+
+    -- Successful movement with turn --
+    setupMocksForGoTo()
+    forwardSideEffect = ig.partial(addToPos, {x=-1, y=0, z=0})
+    igturtle.forward:whenCalled{with={igturtle}, thenReturn={true},
+                                sideEffect=forwardSideEffect}
+    igturtle.back:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.up:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.down:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.LEFT},
+                                   thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.RIGHT},
+                                   thenReturn={false}}
+
+    retval = igturtle:goTo(-1, 0, 0)
+    assert(retval, string.format(
+        "expected %s, got %s", tostring(true), tostring(retval)
+    ))
+    turtle.getFuelLevel:assertCallCount(1)
+    igturtle.forward:assertCallCount(1)
+    igturtle.back:assertCallCount(0)
+    igturtle.up:assertCallCount(0)
+    igturtle.down:assertCallCount(0)
+    igturtle.turnToFace:assertCallMatches({
+        arguments={igturtle, igturtle.RIGHT}
+    })
+
+    -- Successful movement with turn --
+    setupMocksForGoTo()
+    forwardSideEffect = ig.partial(addToPos, {x=1, y=0, z=0})
+    igturtle.forward:whenCalled{with={igturtle}, thenReturn={true},
+                                sideEffect=forwardSideEffect}
+    igturtle.back:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.up:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.down:whenCalled{with={igturtle}, thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.LEFT},
+                                   thenReturn={false}}
+    igturtle.turnToFace:whenCalled{with={igturtle, igturtle.RIGHT},
+                                   thenReturn={false}}
+
+    retval = igturtle:goTo(1, 0, 0)
+    assert(retval, string.format(
+        "expected %s, got %s", tostring(true), tostring(retval)
+    ))
+    turtle.getFuelLevel:assertCallCount(1)
+    igturtle.forward:assertCallCount(1)
+    igturtle.back:assertCallCount(0)
+    igturtle.up:assertCallCount(0)
+    igturtle.down:assertCallCount(0)
+    igturtle.turnToFace:assertCallMatches({
+        arguments={igturtle, igturtle.LEFT}
+    })
+
+    -- Reset methods --
+    igturtle.forward = _forward
+    igturtle.back = _back
+    igturtle.up = _up
+    igturtle.down = _down
+    igturtle.turnRight = _right
+    igturtle.turnLeft = _left
+    igturtle.turnToFace = _face
+end
+
+
+local function test_getPos()
+    local testPos = iggeo.Position:clone{x=3.14, y=159, z=265}
+    local oldPos = igturtle._pos
+    igturtle._pos = testPos
+    assertPosEqual(igturtle:getPos(), testPos)
+    igturtle._pos = oldPos
+end
+
+
+local function test_getOrient()
+    local testOrient = iggeo.Orientation:clone{orient=5}
+    local oldOrient = igturtle._orient
+    igturtle._orient = testOrient
+    assertOrientEqual(igturtle:getOrient(), testOrient)
+    igturtle._orient = oldOrient
+end
+
+
+local function test_getHome()
+    local testHome = iggeo.Position:clone{x=3.14, y=159, z=265}
+    local oldHome = igturtle._home
+    igturtle._home = testHome
+    assertPosEqual(igturtle:getHome(), testHome)
+    igturtle._home = oldHome
+end
+
+
 local function test_globalOrientFromForwardMotion()
     local start = igturtle.Position:new()
     assert(
@@ -322,6 +509,10 @@ test_down()
 test_turnRight()
 test_turnLeft()
 test_turnToFace()
+test_goTo()
+test_getPos()
+test_getOrient()
+test_getHome()
 test_globalOrientFromForwardMotion()
 test_setGps()
 test_verifyGps()
