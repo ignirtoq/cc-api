@@ -131,6 +131,32 @@ function _Orientation:turnRight()
 end
 
 
+function _Orientation:getForwardPos(pos, distance)
+    pos = pos ~= nil and _Position:clone(pos) or _Position:new()
+    distance = distance or 1
+    assert(distance >= 0, "distance must be non-negative")
+    for _ = 1, distance, 1 do
+        pos:add(self.FORWARD_POS_CHANGE[self.orient])
+    end
+    return pos
+end
+
+
+function _Orientation:getLeftPos(pos, distance)
+    return self:copy():turnLeft():getForwardPos(pos, distance)
+end
+
+
+function _Orientation:getRightPos(pos, distance)
+    return self:copy():turnRight():getForwardPos(pos, distance)
+end
+
+
+function _Orientation:getBackPos(pos, distance)
+    return self:copy():turnRight():turnRight():getForwardPos(pos, distance)
+end
+
+
 _OrientationMt.__add = _Orientation.sum
 _OrientationMt.__sub = _Orientation.difference
 _OrientationMt.__tostring = ig.tableToString

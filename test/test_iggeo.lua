@@ -261,6 +261,410 @@ local function test_orientTurnRight()
 end
 
 
+local function test_orientGetForwardPos()
+    local orient = iggeo.Orientation:new()
+
+    -- Default --
+    assertPosEqual(
+        orient:getForwardPos(),
+        {x=0, y=0, z=1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 10),
+        {x=0, y=0, z=10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Default with negative distance --
+    assert(not pcall(orient.getForwardPos, orient, nil, -10),
+           "expected error calling getForwardPos() with negative distance")
+    -- Non-default position --
+    assertPosEqual(
+        orient:getForwardPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=4}
+    )
+
+    -- After turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getForwardPos(),
+        {x=-1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 10),
+        {x=-10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getForwardPos({x=1, y=2, z=3}),
+        {x=0, y=2, z=3}
+    )
+
+    -- After another turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getForwardPos(),
+        {x=0, y=0, z=-1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 10),
+        {x=0, y=0, z=-10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getForwardPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=2}
+    )
+
+    -- Last turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getForwardPos(),
+        {x=1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 10),
+        {x=10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getForwardPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getForwardPos({x=1, y=2, z=3}),
+        {x=2, y=2, z=3}
+    )
+end
+
+
+local function test_orientGetLeftPos()
+    local orient = iggeo.Orientation:new()
+
+    -- Default --
+    assertPosEqual(
+        orient:getLeftPos(),
+        {x=1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 10),
+        {x=10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Default with negative distance --
+    assert(not pcall(orient.getLeftPos, orient, nil, -10),
+           "expected error calling getLeftPos() with negative distance")
+    -- Non-default position --
+    assertPosEqual(
+        orient:getLeftPos({x=1, y=2, z=3}),
+        {x=2, y=2, z=3}
+    )
+
+    -- After turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getLeftPos(),
+        {x=0, y=0, z=1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 10),
+        {x=0, y=0, z=10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getLeftPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=4}
+    )
+
+    -- After another turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getLeftPos(),
+        {x=-1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 10),
+        {x=-10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getLeftPos({x=1, y=2, z=3}),
+        {x=0, y=2, z=3}
+    )
+
+    -- Last turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getLeftPos(),
+        {x=0, y=0, z=-1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 10),
+        {x=0, y=0, z=-10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getLeftPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getLeftPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=2}
+    )
+end
+
+
+local function test_orientGetRightPos()
+    local orient = iggeo.Orientation:new()
+
+    -- Default --
+    assertPosEqual(
+        orient:getRightPos(),
+        {x=-1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 10),
+        {x=-10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Default with negative distance --
+    assert(not pcall(orient.getRightPos, orient, nil, -10),
+           "expected error calling getRightPos() with negative distance")
+    -- Non-default position --
+    assertPosEqual(
+        orient:getRightPos({x=1, y=2, z=3}),
+        {x=0, y=2, z=3}
+    )
+
+    -- After turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getRightPos(),
+        {x=0, y=0, z=-1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 10),
+        {x=0, y=0, z=-10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getRightPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=2}
+    )
+
+    -- After another turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getRightPos(),
+        {x=1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 10),
+        {x=10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getRightPos({x=1, y=2, z=3}),
+        {x=2, y=2, z=3}
+    )
+
+    -- Last turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getRightPos(),
+        {x=0, y=0, z=1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 10),
+        {x=0, y=0, z=10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getRightPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getRightPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=4}
+    )
+end
+
+
+local function test_orientGetBackPos()
+    local orient = iggeo.Orientation:new()
+
+    -- Default --
+    assertPosEqual(
+        orient:getBackPos(),
+        {x=0, y=0, z=-1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 10),
+        {x=0, y=0, z=-10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Default with negative distance --
+    assert(not pcall(orient.getBackPos, orient, nil, -10),
+           "expected error calling getBackPos() with negative distance")
+    -- Non-default position --
+    assertPosEqual(
+        orient:getBackPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=2}
+    )
+
+    -- After turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getBackPos(),
+        {x=1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 10),
+        {x=10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getBackPos({x=1, y=2, z=3}),
+        {x=2, y=2, z=3}
+    )
+
+    -- After another turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getBackPos(),
+        {x=0, y=0, z=1}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 10),
+        {x=0, y=0, z=10}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getBackPos({x=1, y=2, z=3}),
+        {x=1, y=2, z=4}
+    )
+
+    -- Last turn --
+    orient:turnRight()
+
+    -- Default --
+    assertPosEqual(
+        orient:getBackPos(),
+        {x=-1, y=0, z=0}
+    )
+    -- Default with added distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 10),
+        {x=-10, y=0, z=0}
+    )
+    -- Default with zero distance --
+    assertPosEqual(
+        orient:getBackPos(nil, 0),
+        {x=0, y=0, z=0}
+    )
+    -- Non-default position --
+    assertPosEqual(
+        orient:getBackPos({x=1, y=2, z=3}),
+        {x=0, y=2, z=3}
+    )
+end
+
+
 local function test_orientEq()
     assert(
         iggeo.Orientation:clone{orient=1} ==
@@ -525,6 +929,10 @@ test_orientSum()
 test_orientDifference()
 test_orientTurnLeft()
 test_orientTurnRight()
+test_orientGetForwardPos()
+test_orientGetLeftPos()
+test_orientGetRightPos()
+test_orientGetBackPos()
 test_orientEq()
 test_Path_new()
 test_Path_clone()
