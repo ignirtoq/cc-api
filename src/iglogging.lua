@@ -2,18 +2,18 @@
 assert(ig, "iginput API requires ig API")
 
 -- Logging Levels --
-DEBUG    = 10
-INFO     = 20
-WARNING  = 30
-ERROR    = 40
-CRITICAL = 50
+local _DEBUG    = 10
+local _INFO     = 20
+local _WARNING  = 30
+local _ERROR    = 40
+local _CRITICAL = 50
 
 local levelname = {
-    [DEBUG]="DEBUG",
-    [INFO]="INFO",
-    [WARNING]="WARNING",
-    [ERROR]="ERROR",
-    [CRITICAL]="CRITICAL"
+    [_DEBUG]="DEBUG",
+    [_INFO]="INFO",
+    [_WARNING]="WARNING",
+    [_ERROR]="ERROR",
+    [_CRITICAL]="CRITICAL"
 }
 
 local loggers = {}
@@ -48,29 +48,29 @@ function LogInput:log(level, msg, ...)
 end
 
 function LogInput:debug(msg, ...)
-    self:log(DEBUG, msg, ...)
+    self:log(_DEBUG, msg, ...)
 end
 
 function LogInput:info(msg, ...)
-    self:log(INFO, msg, ...)
+    self:log(_INFO, msg, ...)
 end
 
 function LogInput:warning(msg, ...)
-    self:log(WARNING, msg, ...)
+    self:log(_WARNING, msg, ...)
 end
 
 function LogInput:error(msg, ...)
-    self:log(ERROR, msg, ...)
+    self:log(_ERROR, msg, ...)
 end
 
 function LogInput:critical(msg, ...)
-    self:log(CRITICAL, msg, ...)
+    self:log(_CRITICAL, msg, ...)
 end
 
 ----------------
 -- Public API --
 ----------------
-function getLogger(name)
+local function _getLogger(name)
     name = name or "root"
     if loggers[name] == nil then
         loggers[name] = LogInput:new{name=name}
@@ -78,10 +78,33 @@ function getLogger(name)
     return loggers[name]
 end
 
-function setLevel(level)
+local function _setLevel(level)
     LogOutput.level = level
 end
 
-function getLevel()
+local function _getLevel()
     return LogOutput.level
+end
+
+
+if ig.isCC() then
+    _DEBUG = _DEBUG
+    _INFO = _INFO
+    _WARNING = _WARNING
+    _ERROR = _ERROR
+    _CRITICAL = _CRITICAL
+    getLogger = _getLogger
+    setLevel = _setLevel
+    getLevel = _getLevel
+else
+    return {
+        _DEBUG=_DEBUG,
+        _INFO=_INFO,
+        _WARNING=_WARNING,
+        _ERROR=_ERROR,
+        _CRITICAL=_CRITICAL,
+        getLogger=_getLogger,
+        setLevel=_setLevel,
+        getLevel=_getLevel
+    }
 end
