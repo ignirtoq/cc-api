@@ -4,29 +4,17 @@ igturtle = require "src.igturtle"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
+local utils = require "test.testutils"
+
 
 -- Mock CC turtle module. --
 turtle = {}
 
 
-local function assertPosEqual(p1, p2)
-    assert(p1.x == p2.x, string.format("%d != %d", p1.x, p2.x))
-    assert(p1.y == p2.y, string.format("%d != %d", p1.y, p2.y))
-    assert(p1.z == p2.z, string.format("%d != %d", p1.z, p2.z))
-end
-
-
-local function assertOrientEqual(o1, o2)
-    assert(o1.orient == o2.orient, string.format(
-        "%d != %d", o1.orient, o2.orient
-    ))
-end
-
-
 local function test_startPos()
     local pos = igturtle:getPos()
 
-    assertPosEqual(pos, {x=0, y=0, z=0})
+    utils.assertPosEqual(pos, {x=0, y=0, z=0})
     assert(pos.orient == 0, "expected pos.orient=0")
 end
 
@@ -53,7 +41,7 @@ local function _moveTemplate(dir, posChange, inspect, dig)
     turtle[dig]:assertCallCount(0)
     turtle[dir]:assertCallCount(1)
     pos = igturtle:getPos()
-    assertPosEqual(pos, oldPos)
+    utils.assertPosEqual(pos, oldPos)
 
     -- Inspect returns true, so dig should be called. --
     turtle[inspect] = Mock()
@@ -71,7 +59,7 @@ local function _moveTemplate(dir, posChange, inspect, dig)
     turtle[dig]:assertCallCount(1)
     turtle[dir]:assertCallCount(1)
     pos = igturtle:getPos()
-    assertPosEqual(pos, oldPos)
+    utils.assertPosEqual(pos, oldPos)
 
     -- Successful move. --
     turtle[inspect] = Mock()
@@ -89,7 +77,7 @@ local function _moveTemplate(dir, posChange, inspect, dig)
     turtle[dir]:assertCallCount(1)
     pos = igturtle:getPos()
     oldPos:add(posChange)
-    assertPosEqual(pos, oldPos)
+    utils.assertPosEqual(pos, oldPos)
 end
 
 
@@ -140,26 +128,26 @@ local function test_back()
     ))
     pos = igturtle:getPos()
     oldPos:add{x=0, y=0, z=-1}
-    assertPosEqual(pos, oldPos)
+    utils.assertPosEqual(pos, oldPos)
 end
 
 
 local function test_turn(dir, newOrient)
-    assertOrientEqual(igturtle:getPos(), {orient=0})
+    utils.assertOrientEqual(igturtle:getPos(), {orient=0})
 
     -- Failed move. --
     turtle[dir] = Mock()
     turtle[dir]:whenCalled{with={}, thenReturn={false}}
     assert(not igturtle[dir](igturtle))
     turtle[dir]:assertCallCount(1)
-    assertOrientEqual(igturtle:getPos(), {orient=0})
+    utils.assertOrientEqual(igturtle:getPos(), {orient=0})
 
     -- Successful move. --
     turtle[dir] = Mock()
     turtle[dir]:whenCalled{with={}, thenReturn={true}}
     assert(igturtle[dir](igturtle))
     turtle[dir]:assertCallCount(1)
-    assertOrientEqual(igturtle:getPos(), {orient=newOrient})
+    utils.assertOrientEqual(igturtle:getPos(), {orient=newOrient})
 
     -- Reset position. --
     igturtle:setHome()
@@ -383,7 +371,7 @@ local function test_getPos()
     local testPos = iggeo.Position:clone{x=3.14, y=159, z=265}
     local oldPos = igturtle._pos
     igturtle._pos = testPos
-    assertPosEqual(igturtle:getPos(), testPos)
+    utils.assertPosEqual(igturtle:getPos(), testPos)
     igturtle._pos = oldPos
 end
 
@@ -392,7 +380,7 @@ local function test_getOrient()
     local testOrient = iggeo.Orientation:clone{orient=5}
     local oldOrient = igturtle._orient
     igturtle._orient = testOrient
-    assertOrientEqual(igturtle:getOrient(), testOrient)
+    utils.assertOrientEqual(igturtle:getOrient(), testOrient)
     igturtle._orient = oldOrient
 end
 
@@ -401,7 +389,7 @@ local function test_getHome()
     local testHome = iggeo.Position:clone{x=3.14, y=159, z=265}
     local oldHome = igturtle._home
     igturtle._home = testHome
-    assertPosEqual(igturtle:getHome(), testHome)
+    utils.assertPosEqual(igturtle:getHome(), testHome)
     igturtle._home = oldHome
 end
 
@@ -492,7 +480,7 @@ local function test_followPath()
     for ind, pos in ig.enumerate(igturtle:followPath(path)) do
         igturtle.goTo:assertCallCount(1)
         igturtle.goTo:assertCallMatches({with=pos})
-        assertPosEqual(pos, path[ind])
+        utils.assertPosEqual(pos, path[ind])
         setupMockGoTo(path)
     end
 

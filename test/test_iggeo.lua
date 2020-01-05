@@ -3,35 +3,7 @@ iggeo = require "src.iggeo"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
-
-
-local function assertArraysEqual(a, b)
-    local i
-    assert(#a == #b, string.format(
-        "arrays different lengths: %d != %d", #a, #b
-    ))
-
-    for i = 1,#a,1 do
-        assert(a[i] == b[i], string.format(
-            "arrays have different values at %d: %s != %s",
-            i, tostring(a[i]), tostring(b[i])
-        ))
-    end
-end
-
-
-local function assertPosEqual(p1, p2)
-    assert(p1.x == p2.x, string.format("%d != %d", p1.x, p2.x))
-    assert(p1.y == p2.y, string.format("%d != %d", p1.y, p2.y))
-    assert(p1.z == p2.z, string.format("%d != %d", p1.z, p2.z))
-end
-
-
-local function assertOrientEqual(o1, o2)
-    assert(o1.orient == o2.orient, string.format(
-        "%d != %d", o1.orient, o2.orient
-    ))
-end
+local utils = require "test.testutils"
 
 
 local function test_posNew()
@@ -50,7 +22,7 @@ local function test_posClone()
     local base = {x=1, y=2, z=3}
     local clone = iggeo.Position:clone(base)
 
-    assertPosEqual(base, clone)
+    utils.assertPosEqual(base, clone)
 end
 
 
@@ -69,7 +41,7 @@ local function test_posCopy()
     base.x, base.y, base.z = 101, 202, 303
     local copy = base:copy()
 
-    assertPosEqual(base, copy)
+    utils.assertPosEqual(base, copy)
 end
 
 
@@ -109,7 +81,7 @@ local function test_posAdd()
 
     p1:add(p2)
 
-    assertPosEqual(p1, {x=3, y=6, z=9})
+    utils.assertPosEqual(p1, {x=3, y=6, z=9})
 end
 
 
@@ -119,7 +91,7 @@ local function test_posSub()
 
     p1:sub(p2)
 
-    assertPosEqual(p1, {x=-1, y=-2, z=-3})
+    utils.assertPosEqual(p1, {x=-1, y=-2, z=-3})
 end
 
 
@@ -128,7 +100,7 @@ local function test_posSum()
     local p2 = iggeo.Position:clone{x=2, y=4, z=6}
     local sum = iggeo.Position.sum(p1, p2)
 
-    assertPosEqual(sum, {x=3, y=6, z=9})
+    utils.assertPosEqual(sum, {x=3, y=6, z=9})
 end
 
 
@@ -137,7 +109,7 @@ local function test_posDifference()
     local p2 = iggeo.Position:clone{x=2, y=4, z=6}
     local diff = iggeo.Position.difference(p1, p2)
 
-    assertPosEqual(diff, {x=-1, y=-2, z=-3})
+    utils.assertPosEqual(diff, {x=-1, y=-2, z=-3})
 end
 
 
@@ -167,7 +139,7 @@ local function test_orientClone()
     local base = {orient=1}
     local clone = iggeo.Orientation:clone(base)
 
-    assertOrientEqual(base, clone)
+    utils.assertOrientEqual(base, clone)
 end
 
 
@@ -176,7 +148,7 @@ local function test_orientCopy()
     base.orient = 4
     local copy = base:copy()
 
-    assertOrientEqual(base, copy)
+    utils.assertOrientEqual(base, copy)
 end
 
 
@@ -186,13 +158,13 @@ local function test_orientAdd()
     local o2 = iggeo.Orientation:clone{orient=2}
 
     o:add(o1)
-    assertOrientEqual(o, o1)
+    utils.assertOrientEqual(o, o1)
 
     o:add(o1)
-    assertOrientEqual(o, o2)
+    utils.assertOrientEqual(o, o2)
 
     o:add(o2)
-    assertOrientEqual(o, iggeo.Orientation:new())
+    utils.assertOrientEqual(o, iggeo.Orientation:new())
 end
 
 
@@ -201,7 +173,7 @@ local function test_orientSub()
     local o1 = iggeo.Orientation:clone{orient=1}
 
     o:sub(o1)
-    assertOrientEqual(o, {orient=3})
+    utils.assertOrientEqual(o, {orient=3})
 end
 
 
@@ -209,7 +181,7 @@ local function test_orientSum()
     local o1 = iggeo.Orientation:clone{orient=1}
     local o2 = iggeo.Orientation:clone{orient=2}
 
-    assertOrientEqual(o1 + o2, {orient=3})
+    utils.assertOrientEqual(o1 + o2, {orient=3})
 end
 
 
@@ -217,24 +189,24 @@ local function test_orientDifference()
     local o1 = iggeo.Orientation:clone{orient=1}
     local o2 = iggeo.Orientation:clone{orient=2}
 
-    assertOrientEqual(o1 - o2, {orient=3})
+    utils.assertOrientEqual(o1 - o2, {orient=3})
 end
 
 
 local function test_orientTurnLeft()
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=0}):turnLeft(),
         {orient=1}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=1}):turnLeft(),
         {orient=2}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=2}):turnLeft(),
         {orient=3}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=3}):turnLeft(),
         {orient=0}
     )
@@ -242,19 +214,19 @@ end
 
 
 local function test_orientTurnRight()
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=0}):turnRight(),
         {orient=3}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=1}):turnRight(),
         {orient=0}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=2}):turnRight(),
         {orient=1}
     )
-    assertOrientEqual(
+    utils.assertOrientEqual(
         iggeo.Orientation:clone({orient=3}):turnRight(),
         {orient=2}
     )
@@ -265,17 +237,17 @@ local function test_orientGetForwardPos()
     local orient = iggeo.Orientation:new()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(),
         {x=0, y=0, z=1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 10),
         {x=0, y=0, z=10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 0),
         {x=0, y=0, z=0}
     )
@@ -283,7 +255,7 @@ local function test_orientGetForwardPos()
     assert(not pcall(orient.getForwardPos, orient, nil, -10),
            "expected error calling getForwardPos() with negative distance")
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos({x=1, y=2, z=3}),
         {x=1, y=2, z=4}
     )
@@ -292,22 +264,22 @@ local function test_orientGetForwardPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(),
         {x=-1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 10),
         {x=-10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos({x=1, y=2, z=3}),
         {x=0, y=2, z=3}
     )
@@ -316,22 +288,22 @@ local function test_orientGetForwardPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(),
         {x=0, y=0, z=-1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 10),
         {x=0, y=0, z=-10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos({x=1, y=2, z=3}),
         {x=1, y=2, z=2}
     )
@@ -340,22 +312,22 @@ local function test_orientGetForwardPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(),
         {x=1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 10),
         {x=10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getForwardPos({x=1, y=2, z=3}),
         {x=2, y=2, z=3}
     )
@@ -366,17 +338,17 @@ local function test_orientGetLeftPos()
     local orient = iggeo.Orientation:new()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(),
         {x=1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 10),
         {x=10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 0),
         {x=0, y=0, z=0}
     )
@@ -384,7 +356,7 @@ local function test_orientGetLeftPos()
     assert(not pcall(orient.getLeftPos, orient, nil, -10),
            "expected error calling getLeftPos() with negative distance")
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos({x=1, y=2, z=3}),
         {x=2, y=2, z=3}
     )
@@ -393,22 +365,22 @@ local function test_orientGetLeftPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(),
         {x=0, y=0, z=1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 10),
         {x=0, y=0, z=10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos({x=1, y=2, z=3}),
         {x=1, y=2, z=4}
     )
@@ -417,22 +389,22 @@ local function test_orientGetLeftPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(),
         {x=-1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 10),
         {x=-10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos({x=1, y=2, z=3}),
         {x=0, y=2, z=3}
     )
@@ -441,22 +413,22 @@ local function test_orientGetLeftPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(),
         {x=0, y=0, z=-1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 10),
         {x=0, y=0, z=-10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getLeftPos({x=1, y=2, z=3}),
         {x=1, y=2, z=2}
     )
@@ -467,17 +439,17 @@ local function test_orientGetRightPos()
     local orient = iggeo.Orientation:new()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(),
         {x=-1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 10),
         {x=-10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 0),
         {x=0, y=0, z=0}
     )
@@ -485,7 +457,7 @@ local function test_orientGetRightPos()
     assert(not pcall(orient.getRightPos, orient, nil, -10),
            "expected error calling getRightPos() with negative distance")
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos({x=1, y=2, z=3}),
         {x=0, y=2, z=3}
     )
@@ -494,22 +466,22 @@ local function test_orientGetRightPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(),
         {x=0, y=0, z=-1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 10),
         {x=0, y=0, z=-10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos({x=1, y=2, z=3}),
         {x=1, y=2, z=2}
     )
@@ -518,22 +490,22 @@ local function test_orientGetRightPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(),
         {x=1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 10),
         {x=10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos({x=1, y=2, z=3}),
         {x=2, y=2, z=3}
     )
@@ -542,22 +514,22 @@ local function test_orientGetRightPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(),
         {x=0, y=0, z=1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 10),
         {x=0, y=0, z=10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getRightPos({x=1, y=2, z=3}),
         {x=1, y=2, z=4}
     )
@@ -568,17 +540,17 @@ local function test_orientGetBackPos()
     local orient = iggeo.Orientation:new()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(),
         {x=0, y=0, z=-1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 10),
         {x=0, y=0, z=-10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 0),
         {x=0, y=0, z=0}
     )
@@ -586,7 +558,7 @@ local function test_orientGetBackPos()
     assert(not pcall(orient.getBackPos, orient, nil, -10),
            "expected error calling getBackPos() with negative distance")
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos({x=1, y=2, z=3}),
         {x=1, y=2, z=2}
     )
@@ -595,22 +567,22 @@ local function test_orientGetBackPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(),
         {x=1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 10),
         {x=10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos({x=1, y=2, z=3}),
         {x=2, y=2, z=3}
     )
@@ -619,22 +591,22 @@ local function test_orientGetBackPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(),
         {x=0, y=0, z=1}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 10),
         {x=0, y=0, z=10}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos({x=1, y=2, z=3}),
         {x=1, y=2, z=4}
     )
@@ -643,22 +615,22 @@ local function test_orientGetBackPos()
     orient:turnRight()
 
     -- Default --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(),
         {x=-1, y=0, z=0}
     )
     -- Default with added distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 10),
         {x=-10, y=0, z=0}
     )
     -- Default with zero distance --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos(nil, 0),
         {x=0, y=0, z=0}
     )
     -- Non-default position --
-    assertPosEqual(
+    utils.assertPosEqual(
         orient:getBackPos({x=1, y=2, z=3}),
         {x=0, y=2, z=3}
     )
@@ -715,7 +687,7 @@ local function test_Path_append()
     assert(#path == expval, string.format(
         'expected %d, got %d', expval, #path
     ))
-    assertPosEqual(path[1], pos)
+    utils.assertPosEqual(path[1], pos)
 end
 
 
@@ -737,7 +709,7 @@ local function test_Path_pop()
     assert(#path == expval, string.format(
         'expected %d, got %d', expval, #path
     ))
-    assertPosEqual(pos, exppos, string.format(
+    utils.assertPosEqual(pos, exppos, string.format(
         'expected %s, got %s', tostring(exppos), tostring(pos)
     ))
 
@@ -747,7 +719,7 @@ local function test_Path_pop()
     assert(#path == expval, string.format(
         'expected %d, got %d', expval, #path
     ))
-    assertPosEqual(pos, exppos, string.format(
+    utils.assertPosEqual(pos, exppos, string.format(
         'expected %s, got %s', tostring(exppos), tostring(pos)
     ))
 
@@ -768,19 +740,19 @@ local function test_Path_iter()
     for pos in path() do
         testArray[#testArray+1] = pos
     end
-    assertArraysEqual(posArray, testArray)
+    utils.assertArraysEqual(posArray, testArray)
 
     -- With start value --
     testArray = {}
     for pos in path{start=#posArray} do
         testArray[#testArray+1] = pos
     end
-    assertArraysEqual({posArray[#posArray]}, testArray)
+    utils.assertArraysEqual({posArray[#posArray]}, testArray)
 
     -- With loop --
     maxCount = 20
     for count, pos in ig.enumerate(path{loop=true}) do
-        assertPosEqual(pos, posArray[((count-1) % 2) + 1])
+        utils.assertPosEqual(pos, posArray[((count-1) % 2) + 1])
         if count > maxCount then break end
     end
 end
@@ -810,7 +782,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 
     -- One tile in z --
@@ -825,7 +797,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 
     -- One tile in y --
@@ -840,7 +812,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 
     -- One tile each in x, z --
@@ -857,7 +829,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 
     -- One tile each in x, z in reverse --
@@ -874,7 +846,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 
     -- Simulated (tiny) quarry path --
@@ -905,7 +877,7 @@ local function test_Path_generateSpaceFilling()
         'expected %d, got %d', #posArray, #path
     ))
     for exppos, pathpos in ig.zip(values(posArray), path()) do
-        assertPosEqual(exppos, pathpos)
+        utils.assertPosEqual(exppos, pathpos)
     end
 end
 

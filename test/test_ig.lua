@@ -2,6 +2,7 @@ local ig = require "src.ig"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
+local utils = require "test.testutils"
 
 
 local function MockGlobal(name)
@@ -23,39 +24,6 @@ local function SpyGlobal(name)
         _G[name] = self._original
     end
     return s
-end
-
-
-local function assertArraysEqual(a, b)
-    local i
-    assert(#a == #b, string.format(
-        "arrays different lengths: %d != %d", #a, #b
-    ))
-
-    for i = 1,#a,1 do
-        assert(a[i] == b[i], string.format(
-            "arrays have different values at %d: %s != %s",
-            i, tostring(a[i]), tostring(b[i])
-        ))
-    end
-end
-
-
-local function assertTablesEqual(a, b)
-    local i
-    local akeys, bkeys = {}, {}
-    for k, _ in pairs(a) do table.insert(akeys, k) end
-    for k, _ in pairs(b) do table.insert(bkeys, k) end
-    assert(#akeys == #bkeys, string.format(
-        "tables have different sizes: %d != %d", #akeys, #bkeys
-    ))
-    for i = 1,#akeys,1 do
-        assert(a[akeys[i]] == b[akeys[i]], string.format(
-            "tables have different values for %s: %s != %s",
-            tostring(akeys[i]), tostring(a[akeys[i]]),
-            tostring(b[akeys[i]])
-        ))
-    end
 end
 
 
@@ -131,7 +99,7 @@ end
 
 local function test_arrayToSet()
     local tbl = {}
-    assertTablesEqual(
+    utils.assertTablesEqual(
         ig.arrayToSet({'a', 1, true, tbl}),
         {['a']=true, [1]=true, [true]=true, [tbl]=true}
     )
@@ -140,15 +108,15 @@ end
 
 local function test_numericalSetToArray()
     local tbl = {}
-    assertTablesEqual(
+    utils.assertTablesEqual(
         ig.numericalSetToArray{[1]=true, [2]=true, [3]=true},
         {1, 2, 3}
     )
-    assertTablesEqual(
+    utils.assertTablesEqual(
         ig.numericalSetToArray{[0]=true, [1]=true, [2]=true, [3]=true},
         {0, 1, 2, 3}
     )
-    assertTablesEqual(
+    utils.assertTablesEqual(
         ig.numericalSetToArray{[3]=true},
         {3}
     )
@@ -167,7 +135,7 @@ local function test_valuesToArray()
     assert(#arr == mapLen, string.format(
         "unexpected array length: %d != %d", #arr, mapLen
     ))
-    assertTablesEqual(
+    utils.assertTablesEqual(
         ig.arrayToSet(arr),
         {[1]=true, [false]=true, [str]=true}
     )
@@ -188,33 +156,33 @@ local function test_extendTable()
     expected = {1, 'hello', true, true, tbl, func}
     actual = ig.extendTable({}, arrOnly1, arrOnly2)
 
-    assertArraysEqual(expected, actual)
+    utils.assertArraysEqual(expected, actual)
 
     -- No array part case --
     expected = {}
     actual = ig.extendTable({}, noArr1, noArr2)
 
-    assertTablesEqual(expected, actual)
+    utils.assertTablesEqual(expected, actual)
 
     -- General case, only copy array part --
     expected = {1, 2}
     actual = ig.extendTable({}, general)
 
-    assertArraysEqual(expected, actual)
+    utils.assertArraysEqual(expected, actual)
     -- Also test as a table to ensure no map part is copied.
-    assertTablesEqual(expected, actual)
+    utils.assertTablesEqual(expected, actual)
 
     -- One array, one map --
     expected = {unpack(arrOnly1)}
     actual = ig.extendTable({}, arrOnly1, noArr1)
 
-    assertTablesEqual(expected, actual)
+    utils.assertTablesEqual(expected, actual)
 
     -- Not an array --
     expected = {}
     actual = ig.extendTable({}, 1)
 
-    assertTablesEqual(expected, actual)
+    utils.assertTablesEqual(expected, actual)
 
 end
 
@@ -233,7 +201,7 @@ local function test_iter()
         itArray[#itArray+1] = val
     end
 
-    assertArraysEqual(array, itArray)
+    utils.assertArraysEqual(array, itArray)
 
     -- Wrapped stateless case --
     array = {'1', {}, 3}
@@ -246,7 +214,7 @@ local function test_iter()
         itArray[#itArray+1] = val
     end
 
-    assertArraysEqual(array, itArray)
+    utils.assertArraysEqual(array, itArray)
 
     -- Unwrapped stateful case --
     array = {{}, 2, 'b'}
@@ -282,7 +250,7 @@ local function test_zip()
         arr[#arr+1] = val1
         arr[#arr+1] = val2
     end
-    assertArraysEqual(arr, {1, 2, 3, 4, 5, 6})
+    utils.assertArraysEqual(arr, {1, 2, 3, 4, 5, 6})
 
     -- Asymmetric two-iterator case --
     it1 = values{1, 3, 5}
@@ -292,7 +260,7 @@ local function test_zip()
         arr[#arr+1] = val1
         arr[#arr+1] = val2
     end
-    assertArraysEqual(arr, {1, 2, 3, 4})
+    utils.assertArraysEqual(arr, {1, 2, 3, 4})
 
     -- Multi-iterator case --
     it1 = values{'a', 5}
@@ -306,7 +274,7 @@ local function test_zip()
         arr[#arr+1] = v3
         arr[#arr+1] = v4
     end
-    assertArraysEqual(arr, {'a', 'b', 3, 4, 5, 6, 'c', 'd'})
+    utils.assertArraysEqual(arr, {'a', 'b', 3, 4, 5, 6, 'c', 'd'})
 end
 
 
@@ -326,8 +294,8 @@ local function test_enumerate()
         enmArr[#enmArr+1] = enm
         valArr[#valArr+1] = val
     end
-    assertArraysEqual(valArr, testValues)
-    assertArraysEqual(enmArr, {1, 2, 3})
+    utils.assertArraysEqual(valArr, testValues)
+    utils.assertArraysEqual(enmArr, {1, 2, 3})
 
     -- Custom-start case --
     it = values(testValues)
@@ -336,8 +304,8 @@ local function test_enumerate()
         enmArr[#enmArr+1] = enm
         valArr[#valArr+1] = val
     end
-    assertArraysEqual(valArr, testValues)
-    assertArraysEqual(enmArr, {0, 1, 2})
+    utils.assertArraysEqual(valArr, testValues)
+    utils.assertArraysEqual(enmArr, {0, 1, 2})
 
     -- Multi-value case --
     it = ig.iter(ipairs(testValues))
@@ -347,9 +315,9 @@ local function test_enumerate()
         indArr[#indArr+1] = ind
         valArr[#valArr+1] = val
     end
-    assertArraysEqual(enmArr, {2, 3, 4})
-    assertArraysEqual(indArr, {1, 2, 3})
-    assertArraysEqual(valArr, testValues)
+    utils.assertArraysEqual(enmArr, {2, 3, 4})
+    utils.assertArraysEqual(indArr, {1, 2, 3})
+    utils.assertArraysEqual(valArr, testValues)
 end
 
 

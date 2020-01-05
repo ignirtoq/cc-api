@@ -3,21 +3,7 @@ iginv = require "src.iginv"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
-
-
-local function assertArraysEqual(a, b)
-    local i
-    assert(#a == #b, string.format(
-        "arrays different lengths: %d != %d", #a, #b
-    ))
-
-    for i = 1,#a,1 do
-        assert(a[i] == b[i], string.format(
-            "arrays have different values at %d: %s != %s",
-            i, tostring(a[i]), tostring(b[i])
-        ))
-    end
-end
+local utils = require "test.testutils"
 
 
 local function test_ItemType_new()
@@ -179,22 +165,22 @@ local function test_Inventory_getSlotsWithItemType()
 
     local slots = inv:getSlotsWithItemType(itype)
     local expArr = {}
-    assertArraysEqual(expArr, slots)
+    utils.assertArraysEqual(expArr, slots)
 
     inv:setSlot(testSlots[1], istack)
     slots = inv:getSlotsWithItemType(itype)
     expArr = {testSlots[1]}
-    assertArraysEqual(expArr, slots)
+    utils.assertArraysEqual(expArr, slots)
 
     inv:setSlot(testSlots[2], istack)
     slots = inv:getSlotsWithItemType(itype)
     expArr = {testSlots[1], testSlots[2]}
-    assertArraysEqual(expArr, slots)
+    utils.assertArraysEqual(expArr, slots)
 
     inv:setSlot(testSlots[3], istack)
     slots = inv:getSlotsWithItemType(itype)
     expArr = testSlots
-    assertArraysEqual(expArr, slots)
+    utils.assertArraysEqual(expArr, slots)
 end
 
 
@@ -241,17 +227,17 @@ local function test_Inventory_getEmptySlots()
 
     local emptySlots = inv:getEmptySlots()
     local expArray = {0, 1, 2}
-    assertArraysEqual(expArray, emptySlots)
+    utils.assertArraysEqual(expArray, emptySlots)
 
     inv:setSlot(0, iginv.ItemStack:clone{type=itype, size=stacksize})
     emptySlots = inv:getEmptySlots()
     expArray = {1, 2}
-    assertArraysEqual(expArray, emptySlots)
+    utils.assertArraysEqual(expArray, emptySlots)
 
     inv:setSlot(2, iginv.ItemStack:clone{type=itype, size=stacksize})
     emptySlots = inv:getEmptySlots()
     expArray = {1}
-    assertArraysEqual(expArray, emptySlots)
+    utils.assertArraysEqual(expArray, emptySlots)
 end
 
 
