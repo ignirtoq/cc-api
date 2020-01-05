@@ -381,6 +381,8 @@ if ig.isCC() then
     LEFT = IgTurtle.LEFT
     followPath = ig.partial(IgTurtle.followPath, self)
 else
+    IgTurtle.getPos = ig.partial(IgTurtle.getPos, IgTurtle)
+    IgTurtle.getOrient = ig.partial(IgTurtle.getOrient, IgTurtle)
     IgTurtle.Position = iggeo.Position
     IgTurtle.Orientation = iggeo.Orientation
     return IgTurtle
