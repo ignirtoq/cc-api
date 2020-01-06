@@ -19,8 +19,6 @@ local Harvest = {}
 
 function Harvest:new(args)
     return ig.clone(Harvest, {
-        length=assert(tonumber(args.length), "length required"),
-        width=tonumber(args.width) or tonumber(args.length),
         minfuel=tonumber(args.minfuel) or 0,
         waittime=tonumber(args.waittime) or 60,
         saplings=ig.valuesToArray(args.saplings or _sapling)
@@ -38,7 +36,7 @@ end
 function Harvest:findSaplingSlots()
     local keepslots, slot = {}, false
     for _, sapling in pairs(self.saplings) do
-        slot = igturtle.findItemSlot(sapling)
+        slot = igturtle:findItemSlot(sapling)
         if slot then
             keepslots[#keepslots+1] = slot
             log:debug("found sapling %s in slot %d", sapling, slot)
@@ -49,21 +47,21 @@ end
 
 
 function Harvest:dump()
-    igturtle.goHome()
+    igturtle:goHome()
     turtle.select(1)
-    igturtle.emptyInventoryDown(self:findSaplingSlots())
+    igturtle:emptyInventoryDown(self:findSaplingSlots())
 end
 
 
 function Harvest:refuel()
     log:info("refueling")
     self:dump()
-    igturtle.refuel()
+    igturtle:refuel()
 end
 
 
 function Harvest:needsRefuel()
-    local minfuel = args.minfuel or 0
+    local minfuel = self.minfuel or 0
     local pos = igturtle:getPos()
     local fuelPos = igturtle:getRefuelPos()
     return turtle.getFuelLevel() <= pos:distanceTo(fuelPos) + minfuel
@@ -87,7 +85,7 @@ local function _harvestStraightTree(args)
         log:debug("%s found below, harvesting", blockData.name)
         -- Remove the base trunk and replace the sapling. --
         turtle.digDown()
-        local saplingSlot = igturtle.findItemSlot(log2sapling[blockData.name])
+        local saplingSlot = igturtle:findItemSlot(log2sapling[blockData.name])
         if saplingSlot then
             log:debug("found sapling, planting down")
             turtle.select(saplingSlot)
@@ -99,13 +97,13 @@ local function _harvestStraightTree(args)
         blockFound, blockData = turtle.inspectUp()
         while blockFound and log2sapling[blockData.name] do
             log:debug("log found above, moving up to harvest")
-            igturtle.up()
+            igturtle:up()
             height = height + 1
             blockAbove, blockData = turtle.inspectUp()
         end
         -- Go back to z = 0. --
         log:debug("returning to patrol height")
-        while igturtle.getPos().z > 0 do igturtle.down() end
+        while igturtle:getPos().z > 0 do igturtle:down() end
         -- Update minfuel to accomodate tree if it's not already large enough --
         -- First, multiply the height by 2 for moving up and then down. --
         height = 2*height
@@ -119,20 +117,30 @@ end
 
 
 -- Create the farm path from length/width arguments. --
-local function createPath(length, width)
-    local length = args.length or 3
-    local width = args.width or math.abs(length)
-    local turtPos = igturtle.getPos()
-    local turtOrient = igturtle.getOrient()
+local function _createPathFromSides(length, width)
+    local length = length or 3
+    local width = math.abs(width or length)
+    local turtPos = igturtle:getPos()
+    local turtOrient = igturtle:getOrient()
 
     local start = turtOrient:getForwardPos(turtPos)
     local opposite = turtOrient:getForwardPos(turtPos, width)
     if length >= 0 then
-        opposite = turtOrient:getRightPos(opposite, length)
+        opposite = turtOrient:getRightPos(opposite, length-1)
     else
-        opposite = turtOrient:getLeftPos(opposite, -length)
+        opposite = turtOrient:getLeftPos(opposite, -length-1)
     end
     return iggeo.Path:generateSpaceFilling(start, opposite)
+end
+
+
+local function _isCallable(object)
+    if type(object) == "function" then return true end
+    if type(object) == "table" then
+        local meta = getmetatable(object)
+        return type(meta) == "table" and _isCallable(meta.__call)
+    end
+    return false
 end
 
 
@@ -145,9 +153,10 @@ end
 -- dumps its harvest into the inventory below itself.  It uses an inventory   --
 -- just to the right of home to refuel.                                       --
 local function _farmGeneric(args)
+    args = args or {}
     -- Check for required callback function. --
-    cb = args.callback
-    assert(type(cb) == "function", "farmGeneric() missing farm block callback")
+    local cb = args.callback
+    assert(_isCallable(cb), "farmGeneric() missing farm block callback")
 
     -- Optional parameters. --
     local initFuelSlot = tonumber(args.initFuelSlot) or 1
@@ -157,7 +166,7 @@ local function _farmGeneric(args)
     assert(type(path) == 'table', 'farming path must be an array')
     if #path == 0 then
         -- Create the path from length/width arguments. --
-        path = createPath(length, width)
+        path = _createPathFromSides(args.length, args.width)
     end
     local last = path[#path]
 
@@ -173,7 +182,7 @@ local function _farmGeneric(args)
     local th = Harvest:new(args)
 
     -- Main loop. --
-    for pos in igturtle.followPath(path, {loop=true}) do
+    for pos in igturtle:followPath(path, {loop=true}) do
         turtle.suckDown()
         cb(args)
         -- Update any parameters modified by the callback. --
@@ -181,6 +190,7 @@ local function _farmGeneric(args)
         th:refuelIfNeeded()
         if pos == last then
             th:dump()
+            if args.once then break end
             os.sleep(args.waittime)
         end
         log:debug("moving to next position")
@@ -372,7 +382,7 @@ _seed["magicalcrops:QuicksilverCrop"] = "magicalcrops:QuicksilverSeeds"
 
 local function _replant(cropName)
   if _seed[cropName] then
-    local slot = igturtle.findItemSlot(_seed[cropName])
+    local slot = igturtle:findItemSlot(_seed[cropName])
     if slot then
       turtle.select(slot)
       turtle.placeDown()
@@ -407,6 +417,7 @@ end
 ----------------
 if ig.isCC() then
     harvestStraightTree = _harvestStraightTree
+    createPathFromSides = _createPathFromSides
     farmGeneric = _farmGeneric
     harvestTrees = _harvestTrees
     farmPlant = _farmPlant
@@ -414,6 +425,7 @@ if ig.isCC() then
 else
     return {
         harvestStraightTree=_harvestStraightTree,
+        createPathFromSides=_createPathFromSides,
         farmGeneric=_farmGeneric,
         harvestTrees=_harvestTrees,
         farmPlant=_farmPlant,
