@@ -81,6 +81,7 @@ local function _harvestStraightTree(args)
     local height = 0
     local log2sapling = args.saplings or _sapling
     local blockFound, blockData = turtle.inspectDown()
+    local startPos = igturtle.getPos()
     if blockFound and log2sapling[blockData.name] then
         log:debug("%s found below, harvesting", blockData.name)
         -- Remove the base trunk and replace the sapling. --
@@ -101,9 +102,9 @@ local function _harvestStraightTree(args)
             height = height + 1
             blockAbove, blockData = turtle.inspectUp()
         end
-        -- Go back to z = 0. --
+        -- Go back to starting point. --
         log:debug("returning to patrol height")
-        while igturtle.getPos().z > 0 do igturtle.down() end
+        igturtle.goTo(startPos)
         -- Update minfuel to accomodate tree if it's not already large enough --
         -- First, multiply the height by 2 for moving up and then down. --
         height = 2*height
@@ -211,6 +212,7 @@ end
 -- these may grow into larger forms with complex shapes.                      --
 local function _harvestTrees(args)
     args = args or {}
+    args.waittime = args.waittime or 60
     args.callback = _harvestStraightTree
     _farmGeneric(args)
 end
