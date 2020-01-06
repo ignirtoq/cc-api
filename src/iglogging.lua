@@ -88,21 +88,21 @@ end
 
 
 if ig.isCC() then
-    _DEBUG = _DEBUG
-    _INFO = _INFO
-    _WARNING = _WARNING
-    _ERROR = _ERROR
-    _CRITICAL = _CRITICAL
+    DEBUG = _DEBUG
+    INFO = _INFO
+    WARNING = _WARNING
+    ERROR = _ERROR
+    CRITICAL = _CRITICAL
     getLogger = _getLogger
     setLevel = _setLevel
     getLevel = _getLevel
 else
     return {
-        _DEBUG=_DEBUG,
-        _INFO=_INFO,
-        _WARNING=_WARNING,
-        _ERROR=_ERROR,
-        _CRITICAL=_CRITICAL,
+        DEBUG=_DEBUG,
+        INFO=_INFO,
+        WARNING=_WARNING,
+        ERROR=_ERROR,
+        CRITICAL=_CRITICAL,
         getLogger=_getLogger,
         setLevel=_setLevel,
         getLevel=_getLevel
