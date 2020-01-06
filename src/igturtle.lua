@@ -128,11 +128,11 @@ end
 function IgTurtle:turnToFace(orient)
     if (orient - self._orient.orient) % 4 < 2 then
         while self._orient.orient ~= orient do
-            self:turnLeft()
+            self.turnLeft()
         end
     else
         while self._orient.orient ~= orient do
-            self:turnRight()
+            self.turnRight()
         end
     end
 end
@@ -163,31 +163,31 @@ function IgTurtle:goTo(x, y, z)
     if pos.y ~= dest.y then
         local yDirUp = pos.y > dest.y and 0 or 1
         while self._pos.y ~= dest.y do
-            successfulMove = yDirUp == 1 and {self:up()} or {self:down()}
+            successfulMove = yDirUp == 1 and {self.up()} or {self.down()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
     end
     -- z-direction --
     if pos.z ~= dest.z then
         if pos.z > dest.z then
-            self:turnToFace(self.BACKWARD)
+            self.turnToFace(self.BACKWARD)
         else
-            self:turnToFace(self.FORWARD)
+            self.turnToFace(self.FORWARD)
         end
         while self._pos.z ~= dest.z do
-            successfulMove = {self:forward()}
+            successfulMove = {self.forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
     end
     -- x-direction --
     if pos.x ~= dest.x then
         if pos.x > dest.x then
-            self:turnToFace(self.RIGHT)
+            self.turnToFace(self.RIGHT)
         else
-            self:turnToFace(self.LEFT)
+            self.turnToFace(self.LEFT)
         end
         while self._pos.x ~= dest.x do
-            successfulMove = {self:forward()}
+            successfulMove = {self.forward()}
             if not successfulMove[1] then return unpack(successfulMove) end
         end
     end
@@ -197,8 +197,8 @@ end
 
 
 function IgTurtle:goHome()
-    self:goTo(self._home)
-    self:turnToFace(self.FORWARD)
+    self.goTo(self._home)
+    self.turnToFace(self.FORWARD)
 end
 
 
@@ -232,13 +232,13 @@ function IgTurtle:refuel(options)
     options = options or {}
     local oldPos = self._pos:copy()
     if options.enderfuel then
-        self:_refuelFromEnderChest(options.enderfuel)
+        self._refuelFromEnderChest(options.enderfuel)
     else
-        local emptySlot = self:findEmptyItemSlot()
-        self:goTo(self._fuelPos)
+        local emptySlot = self.findEmptyItemSlot()
+        self.goTo(self._fuelPos)
         assert(emptySlot, "no empty slot available for refueling")
-        self:_refuelHere(emptySlot)
-        self:goTo(oldPos)
+        self._refuelHere(emptySlot)
+        self.goTo(oldPos)
     end
 end
 
@@ -247,7 +247,7 @@ end
 function IgTurtle:_refuelFromEnderChest(chestSlot)
     turtle.select(chestSlot)
     turtle.placeDown()
-    self:_refuelHere(chestSlot)
+    self._refuelHere(chestSlot)
     turtle.digDown()
 end
 
@@ -326,15 +326,15 @@ function IgTurtle:_globalOrientFromForwardMotion(start, end_)
 end
 
 
-function IgTurtle:_verifyGps(gps)
-    if gps == nil then
-        gps = {gps.locate()}
-        if #gps == 0 then
+function IgTurtle:_verifyGps(gpsCoords)
+    if gpsCoords == nil then
+        gpsCoords = {gps.locate()}
+        if #gpsCoords == 0 then
             error('unable to get GPS position')
         end
     end
-    gps = iggeo.Position:fromGps(gps)
-    return self._pos + self._globalPosDiff == gps
+    local gpsPos = iggeo.Position:fromGps(gpsCoords)
+    return self._pos + self._globalPosDiff == gpsPos
 end
 
 
@@ -346,40 +346,67 @@ function IgTurtle:followPath(path, iterargs)
     return function()
         local pos = pathIt()
         if pos == nil then return end
-        self:goTo(pos)
+        self.goTo(pos)
         return pos
     end
 end
+
+
+IgTurtle.forward = ig.partial(IgTurtle.forward, IgTurtle)
+IgTurtle.back = ig.partial(IgTurtle.back, IgTurtle)
+IgTurtle.up = ig.partial(IgTurtle.up, IgTurtle)
+IgTurtle.down = ig.partial(IgTurtle.down, IgTurtle)
+IgTurtle.turnRight = ig.partial(IgTurtle.turnRight, IgTurtle)
+IgTurtle.turnLeft = ig.partial(IgTurtle.turnLeft, IgTurtle)
+IgTurtle.turnToFace = ig.partial(IgTurtle.turnToFace, IgTurtle)
+IgTurtle.getPos = ig.partial(IgTurtle.getPos, IgTurtle)
+IgTurtle.getOrient = ig.partial(IgTurtle.getOrient, IgTurtle)
+IgTurtle.getHome = ig.partial(IgTurtle.getHome, IgTurtle)
+IgTurtle.getRefuelPos = ig.partial(IgTurtle.getRefuelPos, IgTurtle)
+IgTurtle.goTo = ig.partial(IgTurtle.goTo, IgTurtle)
+IgTurtle.goHome = ig.partial(IgTurtle.goHome, IgTurtle)
+IgTurtle.setHome = ig.partial(IgTurtle.setHome, IgTurtle)
+IgTurtle.setRefuel = ig.partial(IgTurtle.setRefuel, IgTurtle)
+IgTurtle.refuel = ig.partial(IgTurtle.refuel, IgTurtle)
+IgTurtle._refuelFromEnderChest = ig.partial(IgTurtle._refuelFromEnderChest, IgTurtle)
+IgTurtle._refuelHere = ig.partial(IgTurtle._refuelHere, IgTurtle)
+IgTurtle.emptyInventoryDown = ig.partial(IgTurtle.emptyInventoryDown, IgTurtle)
+IgTurtle.findItemSlot = ig.partial(IgTurtle.findItemSlot , IgTurtle)
+IgTurtle.findEmptyItemSlot = ig.partial(IgTurtle.findEmptyItemSlot, IgTurtle)
+IgTurtle._verifyGps = ig.partial(IgTurtle._verifyGps, IgTurtle)
+IgTurtle.followPath = ig.partial(IgTurtle.followPath, IgTurtle)
+IgTurtle.setGps = ig.partial(IgTurtle.setGps, IgTurtle)
+IgTurtle._globalOrientFromForwardMotion = ig.partial(IgTurtle._globalOrientFromForwardMotion, IgTurtle)
 
 
 ----------------
 -- Public API --
 ----------------
 if ig.isCC() then
-    forward = ig.partial(IgTurtle.forward, IgTurtle)
-    back = ig.partial(IgTurtle.back, IgTurtle)
-    up = ig.partial(IgTurtle.up, IgTurtle)
-    down = ig.partial(IgTurtle.down, IgTurtle)
-    turnRight = ig.partial(IgTurtle.turnRight, IgTurtle)
-    turnLeft = ig.partial(IgTurtle.turnLeft, IgTurtle)
-    turnToFace = ig.partial(IgTurtle.turnToFace, IgTurtle)
-    getPos = ig.partial(IgTurtle.getPos, IgTurtle)
-    getOrient = ig.partial(IgTurtle.getOrient, IgTurtle)
-    getHome = ig.partial(IgTurtle.getHome, IgTurtle)
-    getRefuelPos = ig.partial(IgTurtle.getRefuelPos, IgTurtle)
-    goTo = ig.partial(IgTurtle.goTo, IgTurtle)
-    goHome = ig.partial(IgTurtle.goHome, IgTurtle)
-    setHome = ig.partial(IgTurtle.setHome, IgTurtle)
-    setRefuel = ig.partial(IgTurtle.setRefuel, IgTurtle)
-    refuel = ig.partial(IgTurtle.refuel, IgTurtle)
-    emptyInventoryDown = ig.partial(IgTurtle.emptyInventoryDown, IgTurtle)
-    findItemSlot = ig.partial(IgTurtle.findItemSlot , IgTurtle)
-    findEmptyItemSlot = ig.partial(IgTurtle.findEmptyItemSlot, IgTurtle)
+    forward = IgTurtle.forward
+    back = IgTurtle.back
+    up = IgTurtle.up
+    down = IgTurtle.down
+    turnRight = IgTurtle.turnRight
+    turnLeft = IgTurtle.turnLeft
+    turnToFace = IgTurtle.turnToFace
+    getPos = IgTurtle.getPos
+    getOrient = IgTurtle.getOrient
+    getHome = IgTurtle.getHome
+    getRefuelPos = IgTurtle.getRefuelPos
+    goTo = IgTurtle.goTo
+    goHome = IgTurtle.goHome
+    setHome = IgTurtle.setHome
+    setRefuel = IgTurtle.setRefuel
+    refuel = IgTurtle.refuel
+    emptyInventoryDown = IgTurtle.emptyInventoryDown
+    findItemSlot = IgTurtle.findItemSlot
+    findEmptyItemSlot = IgTurtle.findEmptyItemSlot
+    followPath = IgTurtle.followPath
     FORWARD = IgTurtle.FORWARD
     RIGHT = IgTurtle.RIGHT
     BACKWARD = IgTurtle.BACKWARD
     LEFT = IgTurtle.LEFT
-    followPath = ig.partial(IgTurtle.followPath, self)
 else
     IgTurtle.Position = iggeo.Position
     IgTurtle.Orientation = iggeo.Orientation

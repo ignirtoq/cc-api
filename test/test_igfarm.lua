@@ -24,9 +24,9 @@ local function test_createPathFromSides()
         local pos = iggeo.Position:new()
         local orient = iggeo.Orientation:new()
         igturtle.getPos = Mock()
-        igturtle.getPos:whenCalled{with={igturtle}, thenReturn={pos}}
+        igturtle.getPos:whenCalled{with={}, thenReturn={pos}}
         igturtle.getOrient = Mock()
-        igturtle.getOrient:whenCalled{with={igturtle}, thenReturn={orient}}
+        igturtle.getOrient:whenCalled{with={}, thenReturn={orient}}
     end
 
     -- Default --
@@ -147,7 +147,7 @@ local function test_farmGeneric()
         igturtle.findItemSlot = function() end
         igturtle.emptyInventoryDown = function() end
         igturtle.refuel = Mock()
-        igturtle.refuel:whenCalled{with={igturtle}, thenReturn={}}
+        igturtle.refuel:whenCalled{with={}, thenReturn={}}
     end
 
     -- No callback throws error --
