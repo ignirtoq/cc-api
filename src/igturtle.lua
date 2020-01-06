@@ -198,7 +198,7 @@ end
 
 function IgTurtle:goHome()
     self:goTo(self._home)
-    self:turnToFace(FORWARD)
+    self:turnToFace(self.FORWARD)
 end
 
 
@@ -381,8 +381,6 @@ if ig.isCC() then
     LEFT = IgTurtle.LEFT
     followPath = ig.partial(IgTurtle.followPath, self)
 else
-    IgTurtle.getPos = ig.partial(IgTurtle.getPos, IgTurtle)
-    IgTurtle.getOrient = ig.partial(IgTurtle.getOrient, IgTurtle)
     IgTurtle.Position = iggeo.Position
     IgTurtle.Orientation = iggeo.Orientation
     return IgTurtle

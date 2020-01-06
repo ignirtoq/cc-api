@@ -19,7 +19,7 @@ local levelname = {
 local loggers = {}
 
 local LogOutput = {
-    level=WARNING,
+    level=_WARNING,
     format="[%s] [%s] [%s] %s"
 }
 
