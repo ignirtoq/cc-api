@@ -1,4 +1,4 @@
-local ig = require "src.ig"
+local ig = require "ig.ig"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"

@@ -1,5 +1,5 @@
-ig = require "src.ig"
-iggeo = require "src.iggeo"
+ig = require "ig.ig"
+iggeo = require "ig.iggeo"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"

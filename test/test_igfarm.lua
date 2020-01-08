@@ -2,11 +2,11 @@
 turtle = {}
 
 
-ig = require "src.ig"
-iglogging = require "src.iglogging"
-iggeo = require "src.iggeo"
-igturtle = require "src.igturtle"
-igfarm = require "src.igfarm"
+ig = require "ig.ig"
+iglogging = require "ig.iglogging"
+iggeo = require "ig.iggeo"
+igturtle = require "ig.igturtle"
+igfarm = require "ig.igfarm"
 local Mock = require "test.mock.Mock"
 local Spy = require "test.mock.Spy"
 local ValueMatcher = require "test.mock.ValueMatcher"
