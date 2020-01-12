@@ -1,6 +1,7 @@
 -- Dependencies. --
+local ig = ig or require("ig.ig")
 assert(ig, "igturtle API requires ig API")
-ig.require("iggeo")
+local iggeo = ig.require("ig.iggeo")
 
 -- Turtle singleton. --
 local IgTurtle = {

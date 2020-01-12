@@ -1,6 +1,7 @@
 -- Dependencies --
+local ig = ig or require("ig.ig")
 assert(ig, "iginput API requires ig API")
-ig.require3rdParty("json")
+local json = ig.require("json")
 
 local function _splitStr(str, linelen)
     local numparts, i

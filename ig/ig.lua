@@ -10,12 +10,12 @@
 -- Common basic functions. --
 
 -- Determine if a table is empty.                                             --
-local function _empty(obj)
+local function empty(obj)
     return next(obj) == nil
 end
 
 -- Executes a function once per second until its output is not false or nil.  --
-local function _waitFor(myfun, args)
+local function waitFor(myfun, args)
     assert(type(myfun) == "function", "Can only wait for functions.")
     if args then
         assert(type(args) == "table",
@@ -32,7 +32,7 @@ end
 
 
 -- Convert an array of items to a set (table mapping items to true).          --
-local function _arrayToSet(array)
+local function arrayToSet(array)
     local set = {}
     for _, i in ipairs(array) do
         set[i] = true
@@ -42,7 +42,7 @@ end
 
 
 -- Convert a set of numbers to an array.                                      --
-local function _numericalSetToArray(set)
+local function numericalSetToArray(set)
     local array = {}
     for k, _ in pairs(set) do
         table.insert(array, k)
@@ -53,7 +53,7 @@ end
 
 
 -- Convert a table of key-value pairs to just an array of values.             --
-local function _valuesToArray(tbl)
+local function valuesToArray(tbl)
     local values = {}
     for _, v in pairs(tbl) do
         table.insert(values, v)
@@ -62,7 +62,7 @@ local function _valuesToArray(tbl)
 end
 
 
-local function _tableToString(tab, indent)
+local function tableToString(tab, indent)
     assert(type(tab) == "table", "Argument must be a table.")
     indent = indent or 2
     -- Convert indent number to space characters. --
@@ -79,7 +79,7 @@ local function _tableToString(tab, indent)
             table.insert(arr, sp..tostring(key)..": "..tostring(val))
         else
             table.insert(arr, sp..tostring(key)..": {")
-            table.insert(arr, _tableToString(val, indent+2))
+            table.insert(arr, tableToString(val, indent+2))
             table.insert(arr, sp.."}")
         end
     end
@@ -89,13 +89,13 @@ end
 
 
 -- Prints out the content of a table when Lua won't. --
-local function _printTable(tab, indent)
-    print(_tableToString(tab, indent))
+local function printTable(tab, indent)
+    print(tableToString(tab, indent))
 end
 
 
 -- Extend a table's array portion with another table's array portion.         --
-local function _extendTable(orig, ...)
+local function extendTable(orig, ...)
     local i
     local allnew = {...}
 
@@ -115,16 +115,16 @@ end
 
 
 -- Wrap a function with zero or more arguments to create a new function.      --
-local function _partial(func, ...)
+local function partial(func, ...)
     local args = {...}
     return function(...)
-        return func(unpack(_extendTable({}, args, {...})))
+        return func(unpack(extendTable({}, args, {...})))
     end
 end
 
 
 -- Ensure an iterator is a self-contained, stateful iterator.                 --
-local function _iter(...)
+local function iter(...)
     local iterFields = {...}
     -- Case: iterator (stateful or stateless) passed inside table
     if type(iterFields[1]) == 'table' then
@@ -149,7 +149,7 @@ end
 
 -- Combine multiple iterators into a single iterator that yields a collection --
 -- of one element from each of the constituent iterators.                     --
-local function _zip(...)
+local function zip(...)
     local iterators = {...}
     -- No iterators case.
     if #iterators == 0 then
@@ -170,7 +170,7 @@ end
 
 
 -- Create a new iterator that provides a count alongside provided iterator.   --
-local function _enumerate(iterator, start)
+local function enumerate(iterator, start)
     assert(type(iterator) == 'function', 'iterator must be a function')
     start = start ~= nil and start or 1
     local index = start - 1
@@ -178,8 +178,18 @@ local function _enumerate(iterator, start)
         local values = {iterator()}
         if #values == 0 then return end
         index = index + 1
-        return unpack(_extendTable({index}, values))
+        return unpack(extendTable({index}, values))
     end
+end
+
+
+function basename(path)
+    return path:match('([^/]*)$')
+end
+
+
+function dirname(path)
+    return path:match('(.*/)[^/]*$')
 end
 
 
@@ -211,7 +221,7 @@ end
 
 
 -- Set one table to use another table as an attribute lookup.                 --
-local function _clone(existing, new)
+local function clone(existing, new)
     new = new or {}
     assert(type(existing) == "table", "clone arguments must be tables")
     assert(type(new) == "table", "clone arguments must be tables")
@@ -229,7 +239,7 @@ end
 
 
 -- Determine if an object is an instance of a parent class through clone().   --
-local function _instanceOf(object, candidateParent)
+local function instanceOf(object, candidateParent)
     if type(object) ~= 'table' or type(candidateParent) ~= 'table' then
         return false
     end
@@ -242,6 +252,50 @@ local function _instanceOf(object, candidateParent)
     until object == nil
     return false
 end
+
+
+local ContextManager = {}
+setmetatable(ContextManager, getmetatable(ContextManager) or {})
+
+
+function ContextManager:clone()
+    return clone(self, {})
+end
+
+
+function ContextManager:enter()
+end
+
+
+function ContextManager:exit()
+end
+
+
+function ContextManager:with(...)
+    -- Context body is the last argument, but Lua doesn't like arguments after
+    -- the elipsis, so pull off the last argument manually.
+    local enter_args = {...}
+    local body = table.remove(enter_args, #enter_args)
+
+    -- Call the enter method and capture the output as arguments to the body.
+    local body_args = {self:enter(unpack(enter_args))}
+
+    -- xpcall doesn't support arguments to the invoked function like pcall, so
+    -- wrap the arguments with the body.
+    body = partial(body, unpack(body_args))
+
+    -- Call is a method, but xpcall doesn't call it as one, so wrap it.
+    local exit = partial(self.exit, self)
+
+    -- Call exit with the error if one is raised, otherwise call with nothing.
+    local success = xpcall(body, exit)
+    if success then
+        self:exit()
+    end
+end
+
+
+getmetatable(ContextManager).__call = ContextManager.with
 
 
 --------------------------------
@@ -259,31 +313,100 @@ end
 
 
 -- CC/Lua abstractions --
-local function _isCC()
+local function isCC()
     return type(os.loadAPI) ~= "nil"
 end
 
 
-local function _loadModule(name, path)
-    if _isCC() then
-        -- ComputerCraft load. --
-        return os.loadAPI(path)
-    else
-        -- Standard Lua load. --
-        _G[name] = require(path)
-        -- Check that the module isn't empty. --
-        return next(_G[name]) ~= nil
-    end
+-- API versions --
+local _ver = {
+    ["0"]={
+        ["1"]={last="0"},
+        ["0"]={last="0"},
+        last="1"
+    },
+    last="0"
+}
+
+
+local Version = {}
+local VersionMt = getmetatable(Version) or {}
+setmetatable(Version, VersionMt)
+
+
+function Version:clone(v)
+    assert(v.major ~= nil and v.minor ~= nil and v.patch ~= nil,
+           'version must have major, minor, and patch fields')
+    return clone(Version, {
+        major=tonumber(v.major),
+        minor=tonumber(v.minor),
+        patch=tonumber(v.patch)
+    })
 end
 
 
--- API versions --
-local _ver = {last = "0"}
-_ver["0"] = {last = "1"}
-_ver["0"]["1"] = {last = "0"}
-_ver["0"]["1"]["0"] = true
-_ver["0"]["0"] = {last = "0"}
-_ver["0"]["0"]["0"] = true
+function Version:fromStr(s)
+    assert(type(s) == "string", "Must be a string.")
+
+    -- Version must start with a number. --
+    assert(s:find("%d")==1, "Invalid version string.")
+
+    -- Extract the major, minor, patch version from string. --
+    local ver = {s:match("(%d*)%.?(%d*)%.?(%d*)")}
+    if ver[1]:len() < 1 then
+        ver[1] = _ver.last
+    end
+    -- Pattern will return empty minor version if only major given. --
+    if ver[2]:len() < 1 then
+        if not _ver[ver[1]] then
+            assert("invalid major version number")
+        end
+        ver[2] = _ver[ver[1]].last
+    end
+    -- Pattern will return empty patch version if only major or only major    --
+    -- and minor given. --
+    if ver[3]:len() < 1 then
+        if not _ver[ver[1]][ver[2]] then
+            assert("invalid minor version number")
+        end
+        ver[3] = _ver[ver[1]][ver[2]].last
+    end
+    return Version:clone{
+        major=tonumber(ver[1]),
+        minor=tonumber(ver[2]),
+        patch=tonumber(ver[3])
+    }
+end
+
+
+function Version:toStr()
+    return string.format("%d.%d.%d", self.major, self.minor, self.patch)
+end
+
+
+function Version:isLessThan(other)
+    return (self.major < other.major or
+            self.minor < other.minor or
+            self.patch < other.patch)
+end
+
+
+function Version:equals(other)
+    return (self.major == other.major and
+            self.minor == other.minor and
+            self.patch == other.patch)
+end
+
+
+function Version:isLessThanOrEqualTo(other)
+    return self:isLessThan(other) or self:equals(other)
+end
+
+
+VersionMt.__eq = Version.equals
+VersionMt.__lt = Version.isLessThan
+VersionMt.__le = Version.isLessThanOrEqualTo
+VersionMt.__tostring = Version.toStr
 
 
 local function _verFromStr(s)
@@ -292,120 +415,106 @@ local function _verFromStr(s)
     -- If the version is a word (i.e. branch name), return it. --
     if s:find("%a") then return s end
 
-    -- Otherwise version must start with a number. --
-    assert(s:find("%d")==1, "Invalid version string.")
-
-    -- Extract the major, minor, patch version from string. --
-    ver = {s:match("(%d*)%.?(%d*)%.?(%d*)")}
-    assert(ver[1]:len() > 0, "Must supply major version.")
-    if not _ver[ver[1]] then
-        assert("invalid major version number")
-    end
-    -- Pattern will return empty minor version if only major given. --
-    if ver[2]:len() < 1 then
-        ver[2] = _ver[ver[1]].last
-    end
-    if not _ver[ver[1]][ver[2]] then
-        assert("invalid minor version number")
-    end
-    -- Pattern will return empty patch version if only major or only major    --
-    -- and minor given. --
-    if ver[3]:len() < 1 then
-        ver[3] = _ver[ver[1]][ver[2]].last
-    end
-    if not _ver[ver[1]][ver[2]][ver[3]] then
-        assert("invalid patch version number")
-    end
-    return "v"..ver[1].."."..ver[2].."."..ver[3]
-end
-
-
--- First-party URLs --
-local _urlbase = "https://raw.githubusercontent.com/ignirtoq/cc-api/"
-
-
-local function _makeUrl(apiname, version)
-    return _urlbase .. version .. "/src/" .. apiname .. ".lua"
-end
-
-
--- Local paths. --
-local _pathbase = {cc="/ig/", lua="./ig/"}
-
-
-local function _makePath(apiname)
-    local base = _isCC() and _pathbase.cc or _pathbase.lua
-    return base .. apiname
+    return 'v' .. Version:fromStr(s)
 end
 
 
 -- Third-party APIs --
 local _3rdPartyAPIs = {
     argparse="https://raw.githubusercontent.com/mpeterv/argparse/master/src/argparse.lua",
-    json="https://pastebin.com/raw/4nRg9CHU"
+    json="https://raw.githubusercontent.com/rxi/json.lua/master/json.lua"
 }
 
 
+local function _modToPath(modname)
+    return modname:gsub("%.", "/")
+end
+
+
+-- First-party URLs --
+local _urlbase = "https://raw.githubusercontent.com/ignirtoq/cc-api"
+
+
+local function _makeUrl(apiname, version)
+    local thirdparty = _3rdPartyAPIs[apiname]
+    if thirdparty then return thirdparty end
+    return string.format(
+        "%s/%s/%s%s", _urlbase, tostring(version), _modToPath(apiname), ".lua"
+    )
+end
+
+
+-- Local paths. --
+local _pathbase = "/modules"
+
+
+local function _makePath(apiname)
+    return string.format("%s/%s.lua", _pathbase, _modToPath(apiname))
+end
+
+
 local function _writeUrlToFile(args)
-    if fs.exists(args.path) then fs.delete(args.path) end
     local req = assert(http.get(args.url), "invalid url")
+    fs.makeDir(dirname(args.path))
+    if fs.exists(args.path) then fs.delete(args.path) end
     local f = fs.open(args.path, "w")
-    f.write(http.get(args.url).readAll())
+    f.write(req.readAll())
     f.close()
 end
 
 
-local _requiresTurtle = {}
-_requiresTurtle["igturtle"] = true
-_requiresTurtle["igfarm"]   = true
+local _requiresTurtle = {
+    ['ig.igturtle']=true,
+    ['ig.igfarm']=true
+}
 
 
--- Check that an API is loaded.  Download and load the API if it is not. --
+local function _patchPath()
+    if package.path:find('/modules') == nil then
+        package.path = package.path ..
+                       ';/modules/?;/modules/?.lua;/modules/?/init.lua'
+    end
+end
+
+
+-- Check that a module exists.  Download and load the module if it does not. --
 local function _require(apiname, version)
     if _requiresTurtle[apiname] then
         assert(turtle, apiname .. " can only be loaded for turtles.")
     end
-    -- Check if the API is loaded. --
-    if not _G[apiname] then
-        -- Convert version string to tag/branch name. --
-        version = _verFromStr(version or "master")
-        local path = _makePath(apiname)
-        local err = "Error loading "..apiname.." API."
-        _writeUrlToFile{url=_makeUrl(apiname, version), path=path}
-        assert(_loadModule(apiname, path), err)
-    end
-end
-
-
-local function _require3rdParty(apiname)
-    assert(_3rdPartyAPIs[apiname], "invalid 3rd-party API name")
-    if not _G[apiname] then
-        local url, path = _3rdPartyAPIs[apiname], _makePath(apiname)
-        _writeUrlToFile{url=url, path=path}
-        assert(os.loadAPI(path), "Error loading "..apiname.." API.")
-    end
+    _patchPath()
+    -- Check if the module exists. --
+    local prequire = {pcall(require, apiname)}
+    -- Return the module if loading succeeded. --
+    if prequire[1] then return prequire[2] end
+    -- Download and load the module. --
+    -- Convert version string to tag/branch name. --
+    version = _verFromStr(version or "master")
+    local path = _makePath(apiname)
+    _writeUrlToFile{url=_makeUrl(apiname, version), path=path}
+    prequire = {pcall(require, apiname)}
+    assert(prequire[1], "Error loading "..apiname..".")
+    return prequire[2]
 end
 
 
 -- Loads the other API components. --
-local function _loadAPI(args)
+local function loadAPI(args)
     args = args or {}
     version = args.version or "master"
-    local dirExists = fs.exists("/ig") or fs.makeDir("/ig") or fs.exists("/ig")
-    assert(dirExists, "Error creating directory for API")
     if version ~= "master" then
         os.unloadAPI("ig")
-        _require("ig", version)
+        ig = _require("ig", version)
     end
-    _require("iglogging", version)
-    _require("iginput", version)
-    _require("igrednet", version)
-    _require("igpower", version)
-    _require("iggeo", version)
+    ig.require("iglogging", version)
+    ig.require("iginput", version)
+    ig.require("igrednet", version)
+    ig.require("igpower", version)
+    ig.require("iggeo", version)
     -- Check if this is a turtle. --
     if turtle then
-        _require("igturtle", version)
-        _require("igfarm", version)
+        ig.require("igturtle", version)
+        ig.require("igfarm", version)
     end
     return true
 end
@@ -414,45 +523,26 @@ end
 ----------------
 -- Public API --
 ----------------
--- Support both standard Lua and ComputerCraft module loading. --
-if _isCC() then
-    empty = _empty
-    waitFor = _waitFor
-    arrayToSet = _arrayToSet
-    numericalSetToArray = _numericalSetToArray
-    valuesToArray = _valuesToArray
-    tableToString = _tableToString
-    printTable = _printTable
-    extendTable = _extendTable
-    clone = _clone
-    require = _require
-    require3rdParty = _require3rdParty
-    loadAPI = _loadAPI
-    isCC = _isCC
-    partial = _partial
-    iter = _iter
-    zip = _zip
-    enumerate = _enumerate
-    instanceOf = _instanceOf
-else
-    return {
-        empty=_empty,
-        waitFor=_waitFor,
-        arrayToSet=_arrayToSet,
-        numericalSetToArray=_numericalSetToArray,
-        valuesToArray=_valuesToArray,
-        tableToString=_tableToString,
-        printTable=_printTable,
-        extendTable=_extendTable,
-        clone=_clone,
-        require=_require,
-        require3rdParty=_require3rdParty,
-        loadAPI=_loadAPI,
-        isCC=_isCC,
-        partial=_partial,
-        iter=_iter,
-        zip=_zip,
-        enumerate=_enumerate,
-        instanceOf=_instanceOf
-    }
-end
+return {
+    empty=empty,
+    waitFor=waitFor,
+    arrayToSet=arrayToSet,
+    numericalSetToArray=numericalSetToArray,
+    valuesToArray=valuesToArray,
+    tableToString=tableToString,
+    printTable=printTable,
+    extendTable=extendTable,
+    partial=partial,
+    iter=iter,
+    zip=zip,
+    enumerate=enumerate,
+    basename=basename,
+    dirname=dirname,
+    clone=clone,
+    instanceOf=instanceOf,
+    ContextManager=ContextManager,
+    isCC=isCC,
+    Version=Version,
+    require=_require,
+    loadAPI=loadAPI,
+}

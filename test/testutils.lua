@@ -1,3 +1,10 @@
+local function _assertEqual(a, b)
+    assert(a == b, string.format(
+        "expected '%s', got '%s'", tostring(b), tostring(a)
+    ))
+end
+
+
 local function _assertArraysEqual(a, b)
     local i
     assert(#a == #b, string.format(
@@ -54,10 +61,36 @@ local function _assertTablesEqual(a, b)
 end
 
 
+local function printf(s, ...)
+    io.write(s:format(...))
+end
+
+
+local function runtest(name, func)
+    printf(name .. ' ... ')
+
+    local err, stacktrace
+    local function catch(msg)
+        err = msg
+        stacktrace = debug.traceback()
+    end
+    local passed = xpcall(func, catch)
+
+    printf(passed and 'PASSED\n' or 'FAILED\n')
+    if not passed then
+        print(err)
+        print(stacktrace)
+    end
+end
+
+
 return {
+    assertEqual=_assertEqual,
     assertArraysEqual=_assertArraysEqual,
     assertPosEqual=_assertPosEqual,
     assertPosArrayEqual=_assertPosArrayEqual,
     assertOrientEqual=_assertOrientEqual,
-    assertTablesEqual=_assertTablesEqual
+    assertTablesEqual=_assertTablesEqual,
+    printf=printf,
+    runtest=runtest
 }

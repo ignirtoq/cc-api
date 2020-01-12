@@ -187,6 +187,83 @@ local function test_extendTable()
 end
 
 
+local function test_partial()
+    local expargs, expretval, func, retval, wrapped, wrapped2
+
+    -- No args --
+    expargs = {}
+    expretval = 'abcd'
+    func = Mock():whenCalled{with=expargs, thenReturn={expretval}}
+
+    wrapped = ig.partial(func)
+    retval = wrapped()
+
+    assert(retval == expretval, string.format(
+        "expected '%s', got '%s'", expretval, retval
+    ))
+    func:assertCallCount(1)
+    func:assertCallMatches{with=expargs}
+
+    -- Wrapped args --
+    expargs = {'a', 1}
+    expretval = 'abcd'
+    func = Mock():whenCalled{with=expargs, thenReturn={expretval}}
+
+    wrapped = ig.partial(func, 'a', 1)
+    retval = wrapped()
+
+    assert(retval == expretval, string.format(
+        "expected '%s', got '%s'", expretval, retval
+    ))
+    func:assertCallCount(1)
+    func:assertCallMatches{with={'a', 1}}
+
+    -- Args to wrapped --
+    expargs = {'a', 1}
+    expretval = 'abcd'
+    func = Mock():whenCalled{with=expargs, thenReturn={expretval}}
+
+    wrapped = ig.partial(func)
+    retval = wrapped(unpack(expargs))
+
+    assert(retval == expretval, string.format(
+        "expected '%s', got '%s'", expretval, retval
+    ))
+    func:assertCallCount(1)
+    func:assertCallMatches{with=expargs}
+
+    -- Args to wrapped with args --
+    expargs = {'a', 1, 'b', 2}
+    expretval = 'abcd'
+    func = Mock():whenCalled{with=expargs, thenReturn={expretval}}
+
+    wrapped = ig.partial(func, 'a', 1)
+    retval = wrapped('b', 2)
+
+    assert(retval == expretval, string.format(
+        "expected '%s', got '%s'", expretval, retval
+    ))
+    func:assertCallCount(1)
+    func:assertCallMatches{with=expargs}
+
+    -- Double wrapped --
+    expargs = {'first', 2, 'third', 4}
+    expretval = 1234
+    func = Mock():whenCalled{with=expargs, thenReturn={expretval}}
+
+    wrapped = ig.partial(func, 'first', 2)
+    wrapped2 = ig.partial(wrapped, 'third', 4)
+    retval = wrapped2()
+
+    assert(retval == expretval, string.format(
+        "expected '%s', got '%s'", expretval, retval
+    ))
+    func:assertCallCount(1)
+    func:assertCallMatches{with=expargs}
+
+end
+
+
 local function test_iter()
     local array, baseIt, it, itArray
 
@@ -321,6 +398,25 @@ local function test_enumerate()
 end
 
 
+local function test_basename()
+    utils.assertEqual(ig.basename('/a/b/c'), 'c')
+    utils.assertEqual(ig.basename('/a/b/'), '')
+    utils.assertEqual(ig.basename('a/b/'), '')
+    utils.assertEqual(ig.basename('a/b'), 'b')
+    utils.assertEqual(ig.basename('a'), 'a')
+    utils.assertEqual(ig.basename(''), '')
+end
+
+
+local function test_dirname()
+    utils.assertEqual(ig.dirname('/a/b/c'), '/a/b/')
+    utils.assertEqual(ig.dirname('/a/b/'), '/a/b/')
+    utils.assertEqual(ig.dirname('a/b/'), 'a/b/')
+    utils.assertEqual(ig.dirname('a/b'), 'a/')
+    utils.assertEqual(ig.dirname('a'), nil)
+end
+
+
 local function test_clone()
     local existing, new
 
@@ -385,25 +481,189 @@ local function test_instanceOf()
 end
 
 
-local function test_require()
+local function test_ContextManager()
+    local TestCtx
 
-    -- No-op for "modules" that exist. --
-    _G['test'] = 1
-    assert(pcall(ig.require, 'test'))
-    _G['test'] = nil
+    -- Successful call --
+    TestCtx = ig.clone(ig.ContextManager)
+    TestCtx.enter = Mock():whenCalled{with={ValueMatcher.anyTable}}
+    TestCtx.exit = Mock():whenCalled{with={ValueMatcher.anyTable}}
 
+    TestCtx:clone():with(function() end)
+
+    TestCtx.enter:assertCallCount(1)
+    TestCtx.exit:assertCallCount(1)
+
+    -- Call with enter args --
+    TestCtx = ig.clone(ig.ContextManager)
+    TestCtx.enter = Mock():whenCalled{with={ValueMatcher.anyTable, 'a'},
+                                      thenReturn={'b'}}
+    TestCtx.exit = Mock():whenCalled{with={ValueMatcher.anyTable}}
+
+    TestCtx:clone():with('a', function(val) utils.assertEqual(val, 'b') end)
+
+    TestCtx.enter:assertCallCount(1)
+    TestCtx.exit:assertCallCount(1)
+
+    -- Throw error --
+    TestCtx = ig.clone(ig.ContextManager)
+    TestCtx.enter = Mock():whenCalled{with={ValueMatcher.anyTable}}
+    TestCtx.exit = Mock():whenCalled{with={ValueMatcher.anyTable,
+                                           ValueMatcher.anyString}}
+
+    TestCtx:clone():with(function() error('error') end)
+
+    TestCtx.enter:assertCallCount(1)
+    TestCtx.exit:assertCallCount(1)
 end
 
 
-test_empty()
-test_waitFor()
-test_arrayToSet()
-test_numericalSetToArray()
-test_valuesToArray()
-test_extendTable()
-test_iter()
-test_zip()
-test_enumerate()
-test_clone()
-test_instanceOf()
-test_require()
+local function test_isCC()
+    utils.assertEqual(ig.isCC(), false)
+
+    os.loadAPI = true
+    utils.assertEqual(ig.isCC(), true)
+    os.loadAPI = nil
+end
+
+
+local function test_Version()
+    local smaller, larger
+
+    -- Comparison operators --
+    smaller = ig.Version:clone{major=1, minor=2, patch=3}
+    larger = ig.Version:clone{major=1, minor=2, patch=3}
+
+    assert(smaller <= larger, 'expected smaller < larger')
+    assert(larger >= smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=0, minor=0, patch=0}
+    larger = ig.Version:clone{major=0, minor=0, patch=1}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=0, minor=0, patch=0}
+    larger = ig.Version:clone{major=0, minor=1, patch=0}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=0, minor=0, patch=0}
+    larger = ig.Version:clone{major=1, minor=0, patch=0}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=0, minor=1, patch=2}
+    larger = ig.Version:clone{major=0, minor=2, patch=1}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=1, minor=0, patch=2}
+    larger = ig.Version:clone{major=2, minor=0, patch=1}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    smaller = ig.Version:clone{major=1, minor=2, patch=0}
+    larger = ig.Version:clone{major=2, minor=1, patch=0}
+
+    assert(smaller < larger, 'expected smaller < larger')
+    assert(larger > smaller, 'expected larger > smaller')
+
+    -- String conversion --
+    utils.assertEqual(tostring(ig.Version:clone{major=1, minor=2, patch=3}),
+                      '1.2.3')
+end
+
+
+local function test_require()
+    local exppath, expurl, expmod, modname, module, oldFs, oldHttp, oldRequire
+    oldFs = fs
+    fs = {}
+    oldHttp = http
+    http = {}
+    oldRequire = require
+
+    local function setupMocks()
+        fs.delete = Mock()
+        fs.exists = Mock()
+        fs.makeDir = Mock()
+        fs.mockFile = Mock()
+        fs.mockFile.close = Mock()
+        fs.mockFile.write = Mock()
+        fs.open = Mock()
+        http.get = Mock()
+        http.mockReq = Mock()
+        http.mockReq.readAll = Mock()
+        require = Mock()
+
+        fs.makeDir:whenCalled{with={'/modules/ig/'}, thenReturn={true}}
+        fs.mockFile.close:whenCalled{with={}, thenReturn={}}
+    end
+
+    -- No-op for modules that exist. --
+    setupMocks()
+    require:whenCalled{with={'ig.ig'}, thenReturn={ig}}
+    module = ig.require('ig.ig')
+    assert(module == ig)
+    fs.makeDir:assertCallCount(0)
+    fs.exists:assertCallCount(0)
+
+    -- Download modules that don't exist. --
+    setupMocks()
+    modname = 'ig.igfake'
+    expmod = {}
+    exppath = '/modules/ig/igfake.lua'
+    expurl = 'https://raw.githubusercontent.com/ignirtoq/cc-api/master/ig/igfake.lua'
+    fs.delete:whenCalled{with={exppath}, thenReturn={}}
+    fs.exists:whenCalled{with={exppath}, thenReturn={true}}
+    fs.mockFile.write:whenCalled{with={123}, thenReturn={}}
+    fs.open:whenCalled{with={exppath, 'w'},
+                       thenReturn={fs.mockFile}}
+    http.get:whenCalled{with={expurl}, thenReturn={http.mockReq}}
+    http.mockReq.readAll:whenCalled{with={}, thenReturn={123}}
+    require:whenCalled{with={modname},
+                       sideEffect=function() error('mock require') end}
+    require:whenCalled{with={modname}, thenReturn={expmod}}
+
+    module = ig.require(modname)
+
+    assert(module == expmod, 'did not get expected module')
+    fs.delete:assertCallCount(1)
+    fs.exists:assertCallCount(1)
+    fs.makeDir:assertCallCount(1)
+    fs.mockFile.close:assertCallCount(1)
+    fs.mockFile.write:assertCallCount(1)
+    fs.open:assertCallCount(1)
+    http.get:assertCallCount(1)
+    http.mockReq.readAll:assertCallCount(1)
+    require:assertCallCount(2)
+
+
+    fs = oldFs
+    http = oldHttp
+    require = oldRequire
+end
+
+
+utils.runtest('test_empty', test_empty)
+utils.runtest('test_waitFor', test_waitFor)
+utils.runtest('test_arrayToSet', test_arrayToSet)
+utils.runtest('test_numericalSetToArray', test_numericalSetToArray)
+utils.runtest('test_valuesToArray', test_valuesToArray)
+utils.runtest('test_extendTable', test_extendTable)
+utils.runtest('test_partial', test_partial)
+utils.runtest('test_iter', test_iter)
+utils.runtest('test_zip', test_zip)
+utils.runtest('test_enumerate', test_enumerate)
+utils.runtest('test_basename', test_basename)
+utils.runtest('test_dirname', test_dirname)
+utils.runtest('test_clone', test_clone)
+utils.runtest('test_instanceOf', test_instanceOf)
+utils.runtest('test_ContextManager', test_ContextManager)
+utils.runtest('test_isCC', test_isCC)
+utils.runtest('test_Version', test_Version)
+utils.runtest('test_require', test_require)

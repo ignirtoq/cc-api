@@ -1,4 +1,5 @@
 -- Dependencies. --
+local ig = ig or require("ig.ig")
 assert(ig, "iggeo API requires ig API")
 
 -- Position abstraction. --

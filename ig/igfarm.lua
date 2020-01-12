@@ -1,8 +1,9 @@
 -- Dependencies --
+local ig = ig or require('ig.ig')
 assert(ig, "igfarm API requires ig API")
-ig.require("iggeo")
-ig.require("igturtle")
-ig.require("iglogging")
+local iggeo = ig.require("ig.iggeo")
+local igturtle = ig.require("ig.igturtle")
+local iglogging = ig.require("ig.iglogging")
 
 
 local log = iglogging.getLogger("igfarm")

@@ -1,4 +1,5 @@
 -- Dependencies. --
+local ig = ig or require("ig.ig")
 assert(ig, "iginv API requires ig API")
 
 -- Private helper functions. --

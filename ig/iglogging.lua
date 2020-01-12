@@ -1,5 +1,6 @@
 -- Dependencies --
-assert(ig, "iginput API requires ig API")
+local ig = ig or require("ig.ig")
+assert(ig, "iglogging API requires ig API")
 
 -- Logging Levels --
 local _DEBUG    = 10
