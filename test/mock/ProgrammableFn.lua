@@ -13,10 +13,9 @@ local ProgrammableFn = {}
 ProgrammableFn.__index = ProgrammableFn
 
 
-local function behaviourSideEffect( behaviour, args )
+local function behaviourSideEffect( behaviour )
     local next = behaviour.nextReturnSet
-    local sideEffect = behaviour.sideEffects[next]
-    sideEffect(unpack(args))
+    return behaviour.sideEffects[next]
 end
 
 local function behaviourReturnValues( behaviour )
@@ -39,8 +38,12 @@ function ProgrammableFn:__call( ... )
     if not behaviour then
         error('No matching behaviour for call.', 2)
     end
-    behaviourSideEffect(behaviour, {...})
-    return behaviourReturnValues(behaviour)
+    local sideEffect = behaviourSideEffect(behaviour)
+    local retval = behaviourReturnValues(behaviour)
+    -- Call side effect after getting return value so that the return set index
+    -- increments before the side effect is called in case it throws an error.
+    sideEffect(...)
+    return retval
 end
 
 function ProgrammableFn:_findMatchingBehaviour( arguments )

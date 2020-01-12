@@ -11,12 +11,18 @@ Spy.__index = Spy
 
 
 function Spy:__call( ... )
-    local returnValues = { self.wrappedFn(...) }
+    local args = {...}
+    local err
+    local returnValues = { xpcall(function() return self.wrappedFn(unpack(args)) end,
+                                  function(...) err = {...} end) }
+    local errRaised = not table.remove(returnValues, 1)
     local call = {
-        arguments = {...},
-        returnValues = returnValues
+        arguments = args,
+        returnValues = returnValues,
+        err = err
     }
     table.insert(self.calls, call)
+    if errRaised then error(unpack(err)) end
     return unpack(returnValues)
 end
 
