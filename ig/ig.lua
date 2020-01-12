@@ -500,21 +500,21 @@ end
 
 -- Loads the other API components. --
 local function loadAPI(args)
+    local ig = require("ig.ig")
     args = args or {}
     version = args.version or "master"
     if version ~= "master" then
-        os.unloadAPI("ig")
-        ig = _require("ig", version)
+        ig = _require("ig.ig", version)
     end
-    ig.require("iglogging", version)
-    ig.require("iginput", version)
-    ig.require("igrednet", version)
-    ig.require("igpower", version)
-    ig.require("iggeo", version)
+    ig.require("ig.iglogging", version)
+    ig.require("ig.iginput", version)
+    ig.require("ig.igrednet", version)
+    ig.require("ig.igpower", version)
+    ig.require("ig.iggeo", version)
     -- Check if this is a turtle. --
     if turtle then
-        ig.require("igturtle", version)
-        ig.require("igfarm", version)
+        ig.require("ig.igturtle", version)
+        ig.require("ig.igfarm", version)
     end
     return true
 end

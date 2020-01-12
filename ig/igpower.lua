@@ -1,7 +1,7 @@
 -- Dependencies. --
 local ig = ig or require("ig.ig")
 assert(ig, "igpower API requires ig API")
-local igrednet = ig.require("igrednet")
+local igrednet = ig.require("ig.igrednet")
 
 -- Power management. --
 local function _setOutput(sides, value)

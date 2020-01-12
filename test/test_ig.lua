@@ -649,6 +649,11 @@ local function test_require()
 end
 
 
+local function test_loadAPI()
+    ig.loadAPI()
+end
+
+
 utils.runtest('test_empty', test_empty)
 utils.runtest('test_waitFor', test_waitFor)
 utils.runtest('test_arrayToSet', test_arrayToSet)
@@ -667,3 +672,4 @@ utils.runtest('test_ContextManager', test_ContextManager)
 utils.runtest('test_isCC', test_isCC)
 utils.runtest('test_Version', test_Version)
 utils.runtest('test_require', test_require)
+utils.runtest('test_loadAPI', test_loadAPI)
