@@ -97,6 +97,14 @@ local function test_waitFor()
 end
 
 
+local function test_reverseArray()
+    utils.assertArraysEqual(ig.reverseArray({}), {})
+    utils.assertArraysEqual(ig.reverseArray({1}), {1})
+    utils.assertArraysEqual(ig.reverseArray({1, 2}), {2, 1})
+    utils.assertArraysEqual(ig.reverseArray({1, 2, 3}), {3, 2, 1})
+end
+
+
 local function test_arrayToSet()
     local tbl = {}
     utils.assertTablesEqual(
@@ -447,6 +455,17 @@ local function test_clone()
 end
 
 
+local function test_super()
+    local A = {}
+    local B = ig.clone(A)
+    local C = ig.clone(B)
+
+    utils.assertEqual(ig.super(C), B)
+    utils.assertEqual(ig.super(B), A)
+    utils.assertEqual(ig.super(A), nil)
+end
+
+
 local function test_instanceOf()
     local child, grandchild, parent
 
@@ -478,6 +497,103 @@ local function test_instanceOf()
            'expected parent not to be instanceOf grandchild')
     assert(not ig.instanceOf(child, grandchild),
            'expected child not to be instanceOf grandchild')
+end
+
+
+local function test_getmro()
+    local A = {}
+    local B = ig.clone(A)
+    local C = ig.clone(B)
+
+    utils.assertArraysEqual({A}, ig.getmro(A))
+    utils.assertArraysEqual({B, A}, ig.getmro(B))
+    utils.assertArraysEqual({C, B, A}, ig.getmro(C))
+end
+
+
+local function test_mergeLinearizations()
+    utils.assertArraysEqual(ig.mergeLinearizations({1, 2, 3}), {1, 2, 3})
+    utils.assertArraysEqual(
+        ig.mergeLinearizations(
+            {1, 2, 3},
+            {1, 3, 4}
+        ),
+        {1, 2, 3, 4}
+    )
+    utils.assertArraysEqual(
+        ig.mergeLinearizations(
+            {1, 2, 3},
+            {1, 3, 4},
+            {1, 3, 5},
+            {2, 4, 5}
+        ),
+        {1, 2, 3, 4, 5}
+    )
+    utils.assertArraysEqual(
+        ig.mergeLinearizations(
+            {1, 2, 3},
+            {1, 3, 4},
+            {1, 3, 5},
+            {1, 3, 5},
+            {2, 4, 5}
+        ),
+        {1, 2, 3, 4, 5}
+    )
+
+    assert(not pcall(ig.mergeLinearizations,
+        {1, 2}, {2, 1}
+    ))
+end
+
+
+local function test_inherit()
+    local A, B, C, D, E, F
+
+    -- Basic inheritance --
+    A, B, C = {}, {}, {}
+    D = ig.inherit(C, B, A)
+    utils.assertEqual(D[1], nil)
+    A[1] = 1
+    B[2] = 2
+    C[3] = 3
+    utils.assertEqual(D[1], 1)
+    utils.assertEqual(D[2], 2)
+    utils.assertEqual(D[3], 3)
+
+    -- Basic precedence --
+    A, B, C = {1}, {2}, {3}
+    D = ig.inherit(C, B, A)
+    utils.assertEqual(D[1], 3)
+    C[1] = nil
+    utils.assertEqual(D[1], 2)
+    B[1] = nil
+    utils.assertEqual(D[1], 1)
+    A[1] = nil
+    utils.assertEqual(D[1], nil)
+
+    -- Deeper inheritance linearization --
+    A = {}
+    B = ig.clone(A)
+    C = ig.clone(B)
+    D = ig.inherit(C, B)
+    utils.assertArraysEqual(ig.getmro(D), {D, C, B, A})
+    assert(not pcall(ig.inherit, B, C))
+
+    A = {}
+    B = ig.clone(A)
+    C = ig.clone(A)
+    D = ig.clone(B)
+    E = ig.clone(C)
+    F = ig.inherit(E, D)
+    utils.assertArraysEqual(ig.getmro(F), {F, E, C, D, B, A})
+
+    A = {}
+    B = ig.clone(A)
+    C = ig.clone(A)
+    D = ig.inherit(C, B)
+    E = ig.clone(C)
+    F = ig.inherit(E, D)
+    utils.assertArraysEqual(ig.getmro(F), {F, E, D, C, B, A})
 end
 
 
@@ -656,6 +772,7 @@ end
 
 utils.runtest('test_empty', test_empty)
 utils.runtest('test_waitFor', test_waitFor)
+utils.runtest('test_reverseArray', test_reverseArray)
 utils.runtest('test_arrayToSet', test_arrayToSet)
 utils.runtest('test_numericalSetToArray', test_numericalSetToArray)
 utils.runtest('test_valuesToArray', test_valuesToArray)
@@ -667,7 +784,11 @@ utils.runtest('test_enumerate', test_enumerate)
 utils.runtest('test_basename', test_basename)
 utils.runtest('test_dirname', test_dirname)
 utils.runtest('test_clone', test_clone)
+utils.runtest('test_super', test_super)
 utils.runtest('test_instanceOf', test_instanceOf)
+utils.runtest('test_getmro', test_getmro)
+utils.runtest('test_mergeLinearizations', test_mergeLinearizations)
+utils.runtest('test_inherit', test_inherit)
 utils.runtest('test_ContextManager', test_ContextManager)
 utils.runtest('test_isCC', test_isCC)
 utils.runtest('test_Version', test_Version)

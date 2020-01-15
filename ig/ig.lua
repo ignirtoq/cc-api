@@ -31,6 +31,17 @@ local function waitFor(myfun, args)
 end
 
 
+local function reverseArray(arr)
+    assert(type(arr) == 'table', 'argument must be a table')
+    local reversed = {}
+    local i
+    for i = #arr, 1, -1 do
+        reversed[#arr-i+1] = arr[i]
+    end
+    return reversed
+end
+
+
 -- Convert an array of items to a set (table mapping items to true).          --
 local function arrayToSet(array)
     local set = {}
@@ -212,6 +223,28 @@ _mtSpecialKeys = {
 }
 
 
+local function _getmetatable(obj)
+    if type(obj) ~= 'table' then return {} end
+    return getmetatable(obj) or {}
+end
+
+
+local function getmro(obj)
+    return _getmetatable(obj).__mro or {obj}
+end
+
+
+local function _index(inst, key)
+    local mro = _getmetatable(inst).__mro or {}
+    local _, parent, value
+    for _, parent in ipairs(mro) do
+        value = rawget(parent, key)
+        if value ~= nil then return value end
+    end
+    return value
+end
+
+
 local function _copyMeta(existing_mt, new_mt)
     for _, key in pairs(_mtSpecialKeys) do
         new_mt[key] = existing_mt[key] or new_mt[key]
@@ -225,16 +258,16 @@ local function clone(existing, new)
     new = new or {}
     assert(type(existing) == "table", "clone arguments must be tables")
     assert(type(new) == "table", "clone arguments must be tables")
-    local existing_mt = getmetatable(existing) or {}
-    local new_mt = getmetatable(new) or {}
-    new_mt.__index = existing
+    local existing_mt = _getmetatable(existing)
+    local new_mt = _getmetatable(new)
+    new_mt.__index = _index
+    new_mt.__mro = extendTable({}, {new}, getmro(existing))
     return setmetatable(new, _copyMeta(existing_mt, new_mt))
 end
 
 
-local function _getParent(object)
-    local mt = getmetatable(object) or {}
-    return mt.__index
+local function super(object)
+    return getmro(object)[2]  -- 1 is the object, 2 is the immediate parent
 end
 
 
@@ -243,14 +276,91 @@ local function instanceOf(object, candidateParent)
     if type(object) ~= 'table' or type(candidateParent) ~= 'table' then
         return false
     end
+    local mro = arrayToSet(getmro(object))
+    return mro[candidateParent]
+end
 
-    repeat
-        object = _getParent(object)
-        if object == candidateParent then
-            return true
-        end
-    until object == nil
+
+local function _reverseArrays(...)
+    local a
+    local copies = {}
+    for _, a in ipairs{...} do
+        table.insert(copies, reverseArray(a))
+    end
+    return copies
+end
+
+
+local function _arraysNotEmpty(arrays)
+    local a
+    for _, a in ipairs(arrays) do
+        if not empty(a) then return true end
+    end
     return false
+end
+
+
+local function _checkHead(head, clsArrays, clsSets)
+    local arr, i, set, valid
+    if head == nil then
+        return false
+    end
+    for i, set in ipairs(clsSets) do
+        arr = clsArrays[i]
+        -- If the class is in the MRO but not the head, it's invalid.
+        if set[head] and arr[#arr] ~= head then
+            return false
+        end
+    end
+    return true
+end
+
+
+local function _getNextHead(clsArrays, clsSets)
+    local arr, head, innerarr
+    for _, arr in ipairs(clsArrays) do
+        head = arr[#arr]
+        if _checkHead(head, clsArrays, clsSets) then
+            -- Pop off the end of all lists it appears.
+            for _, innerarr in ipairs(clsArrays) do
+                if innerarr[#innerarr] == head then
+                    table.remove(innerarr, #innerarr)
+                end
+            end
+            return head
+        end
+    end
+end
+
+
+local function mergeLinearizations(...)
+    local arr, head
+    local arrays = _reverseArrays(...)
+    local sets, merged = {}, {}
+    for _, arr in ipairs(arrays) do
+        table.insert(sets, arrayToSet(arr))
+    end
+    while _arraysNotEmpty(arrays) do
+        table.insert(merged, _getNextHead(arrays, sets))
+    end
+    return merged
+end
+
+
+local function inherit(...)
+    local cls
+    local parents = {...}
+    local lparents = {}
+    local i, parent
+    for i, parent in ipairs(parents) do
+        table.insert(lparents, getmro(parent))
+    end
+    local linearizations = extendTable({}, lparents, {parents})
+    local newmro = mergeLinearizations(unpack(linearizations))
+    cls = clone(newmro[1] or {})
+    table.insert(newmro, 1, cls)
+    getmetatable(cls).__mro = newmro
+    return cls
 end
 
 
@@ -526,6 +636,7 @@ end
 return {
     empty=empty,
     waitFor=waitFor,
+    reverseArray=reverseArray,
     arrayToSet=arrayToSet,
     numericalSetToArray=numericalSetToArray,
     valuesToArray=valuesToArray,
@@ -539,7 +650,11 @@ return {
     basename=basename,
     dirname=dirname,
     clone=clone,
+    super=super,
     instanceOf=instanceOf,
+    getmro=getmro,
+    mergeLinearizations=mergeLinearizations,
+    inherit=inherit,
     ContextManager=ContextManager,
     isCC=isCC,
     Version=Version,
